@@ -1,0 +1,238 @@
+/** 作业日期：中文标签解析、日键、周计算（用于首页按日筛选） */
+
+export function dayKeyFromDate(d : Date) : number {
+  const y = d.getFullYear()
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  return y * 10000 + m * 100 + day
+}
+
+export function parseChineseDateLabel(s : string) : number {
+  if (s == null) return -1
+  const t = s.trim()
+  if (t.length < 6) return -1
+  const yIdx = t.indexOf('年')
+  if (yIdx <= 0) return -1
+  const mIdx = t.indexOf('月', yIdx + 1)
+  if (mIdx <= yIdx) return -1
+  const dIdx = t.indexOf('日', mIdx + 1)
+  if (dIdx <= mIdx) return -1
+  const yStr = t.substring(0, yIdx)
+  const mStr = t.substring(yIdx + 1, mIdx)
+  const dStr = t.substring(mIdx + 1, dIdx)
+  const y = parseInt(yStr)
+  const m = parseInt(mStr)
+  const dd = parseInt(dStr)
+  if (y <= 0 || m <= 0 || m > 12 || dd <= 0 || dd > 31) return -1
+  return y * 10000 + m * 100 + dd
+}
+
+export function dateFromDayKey(key : number) : Date {
+  const y = Math.floor(key / 10000)
+  const m = Math.floor((key % 10000) / 100)
+  const d = key % 100
+  return new Date(y, m - 1, d)
+}
+
+export function addDays(d : Date, delta : number) : Date {
+  const x = new Date(d.getTime())
+  x.setDate(x.getDate() + delta)
+  return x
+}
+
+/** 当天 0:00 的本地 Date */
+export function stripTime(d : Date) : Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+/** 包含 d 的那一周的周一 0:00（周一起算） */
+export function mondayOfWeekContaining(d : Date) : Date {
+  const x = stripTime(d)
+  const jsDow = x.getDay()
+  const mon0 = (jsDow + 6) % 7
+  x.setDate(x.getDate() - mon0)
+  return x
+}
+
+const WK_NAMES = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+export function weekdayLabelMonday0(mondayBasedIndex : number) : string {
+  if (mondayBasedIndex < 0 || mondayBasedIndex > 6) return ''
+  return WK_NAMES[mondayBasedIndex]
+}
+
+/** 首页日期条单元：周列标题、日数字、是否灰显、是否今天 */
+export type DateStripCell = {
+  week : string
+  day : string
+  dayKey : number
+  dim : boolean
+  isToday : boolean
+}
+
+export function buildWeekCells(weekMonday : Date, minKey : number, maxKey : number, todayKey : number) : DateStripCell[] {
+  const out : DateStripCell[] = []
+  const mon = stripTime(weekMonday)
+  for (let i = 0; i < 7; i++) {
+    const cellDate = addDays(mon, i)
+    const key = dayKeyFromDate(cellDate)
+    const dim = key < minKey || key > maxKey
+    const isToday = key == todayKey
+    let wk = weekdayLabelMonday0(i)
+    if (isToday) {
+      wk = '今天'
+    }
+    const dayStr = cellDate.getDate().toString()
+    out.push({
+      week: wk,
+      day: dayStr,
+      dayKey: key,
+      dim: dim,
+      isToday: isToday,
+    })
+  }
+  return out
+}
+
+export function buildWeekPages(rangeAnchor : Date) : DateStripCell[][] {
+  const t0 = stripTime(rangeAnchor)
+  const minD = addDays(t0, -30)
+  const maxD = addDays(t0, 30)
+  const minKey = dayKeyFromDate(minD)
+  const maxKey = dayKeyFromDate(maxD)
+  const todayKey = dayKeyFromDate(t0)
+  const firstMon = mondayOfWeekContaining(minD)
+  const lastMon = mondayOfWeekContaining(maxD)
+  const pages : DateStripCell[][] = []
+  let cur = new Date(firstMon.getTime())
+  while (dayKeyFromDate(cur) <= dayKeyFromDate(lastMon)) {
+    pages.push(buildWeekCells(cur, minKey, maxKey, todayKey))
+    cur = addDays(cur, 7)
+  }
+  if (pages.length == 0) {
+    pages.push(buildWeekCells(firstMon, minKey, maxKey, todayKey))
+  }
+  return pages
+}
+
+export function findWeekIndexForDayKey(pages : DateStripCell[][], dayKey : number) : number {
+  for (let wi = 0; wi < pages.length; wi++) {
+    const wk = pages[wi]
+    for (let di = 0; di < wk.length; di++) {
+      if (wk[di].dayKey == dayKey) {
+        return wi
+      }
+    }
+  }
+  return 0
+}
+
+export function columnIndexForKeyInWeek(week : DateStripCell[], dayKey : number) : number {
+  for (let i = 0; i < week.length; i++) {
+    if (week[i].dayKey == dayKey) {
+      return i
+    }
+  }
+  return 0
+}
+
+export function firstSelectableKeyInWeek(week : DateStripCell[]) : number {
+  for (let i = 0; i < week.length; i++) {
+    if (!week[i].dim) {
+      return week[i].dayKey
+    }
+  }
+  return week[0].dayKey
+}
+
+/** 标题：10月24日 · 周四 */
+export function formatSectionTitle(dayKey : number) : string {
+  const d = dateFromDayKey(dayKey)
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  const jsDow = d.getDay()
+  const mon0 = (jsDow + 6) % 7
+  const wk = weekdayLabelMonday0(mon0)
+  return m.toString() + '月' + day.toString() + '日 · ' + wk
+}
+
+export function taskCoversDayKey(startLabel : string, endLabel : string, dayKey : number) : boolean {
+  const a = parseChineseDateLabel(startLabel)
+  const b = parseChineseDateLabel(endLabel)
+  if (a < 0 || b < 0) {
+    return false
+  }
+  const lo = a < b ? a : b
+  const hi = a < b ? b : a
+  return dayKey >= lo && dayKey <= hi
+}
+
+/** 与 parseChineseDateLabel 互逆的中文日期，如 2026年5月13日 */
+export function chineseDateLabelFromDate(d : Date) : string {
+  const y = d.getFullYear()
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  return y.toString() + '年' + m.toString() + '月' + day.toString() + '日'
+}
+
+export function dayKeyToChineseLabel(key : number) : string {
+  return chineseDateLabelFromDate(dateFromDayKey(key))
+}
+
+function pad2(n : number) : string {
+  if (n < 10) {
+    return '0' + n.toString()
+  }
+  return n.toString()
+}
+
+/** 首页卡片等：中文日期 → 2026.05.13；解析失败则原样返回 */
+export function dotDateLabelFromChineseLabel(label : string) : string {
+  if (label == null || label.length == 0) {
+    return label != null ? label : ''
+  }
+  const k = parseChineseDateLabel(label)
+  if (k < 0) {
+    return label
+  }
+  const y = Math.floor(k / 10000)
+  const m = Math.floor((k % 10000) / 100)
+  const d = k % 100
+  return y.toString() + '.' + pad2(m) + '.' + pad2(d)
+}
+
+/** picker mode=date 的 value：YYYY-MM-DD */
+export function isoDateStringFromDayKey(key : number) : string {
+  const d = dateFromDayKey(key)
+  const y = d.getFullYear()
+  const m = d.getMonth() + 1
+  const day = d.getDate()
+  return y.toString() + '-' + pad2(m) + '-' + pad2(day)
+}
+
+/** ISO 字符串转 dayKey；解析失败则返回今天 */
+export function dayKeyFromIsoDateString(s : string) : number {
+  if (s == null || s.length < 8) {
+    return dayKeyFromDate(stripTime(new Date()))
+  }
+  const parts = s.split('-')
+  if (parts.length < 3) {
+    return dayKeyFromDate(stripTime(new Date()))
+  }
+  const y = parseInt(parts[0])
+  const m = parseInt(parts[1])
+  const d = parseInt(parts[2])
+  if (y <= 0 || m <= 0 || m > 12 || d <= 0 || d > 31) {
+    return dayKeyFromDate(stripTime(new Date()))
+  }
+  return y * 10000 + m * 100 + d
+}
+
+/** 中文标签转 picker 用 ISO；无效则今天 */
+export function isoDateStringFromChineseLabel(label : string) : string {
+  const k = parseChineseDateLabel(label)
+  if (k < 0) {
+    return isoDateStringFromDayKey(dayKeyFromDate(stripTime(new Date())))
+  }
+  return isoDateStringFromDayKey(k)
+}

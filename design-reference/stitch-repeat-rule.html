@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hans"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#d4e8d0",
+                    "error-container": "#fd795a",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#9b9e97",
+                    "tertiary-container": "#f8ffbc",
+                    "on-surface": "#2d342c",
+                    "primary-dim": "#325c37",
+                    "surface": "#f8faf3",
+                    "primary-fixed": "#beefbe",
+                    "inverse-surface": "#0c0f0b",
+                    "on-primary": "#e9ffe5",
+                    "secondary-fixed": "#d4e8d0",
+                    "on-secondary-container": "#455644",
+                    "primary-container": "#beefbe",
+                    "surface-dim": "#d5dcd0",
+                    "secondary": "#526451",
+                    "outline-variant": "#adb4a8",
+                    "on-error": "#fff7f6",
+                    "tertiary": "#5d6330",
+                    "outline": "#767d72",
+                    "surface-variant": "#dee5d8",
+                    "on-error-container": "#6e1400",
+                    "tertiary-dim": "#515725",
+                    "surface-bright": "#f8faf3",
+                    "surface-container-high": "#e4eadf",
+                    "on-tertiary-fixed": "#4b501f",
+                    "on-primary-fixed": "#1d4825",
+                    "secondary-dim": "#465745",
+                    "on-secondary-fixed-variant": "#4f604d",
+                    "on-surface-variant": "#5a6157",
+                    "error": "#a73b21",
+                    "secondary-fixed-dim": "#c6dac2",
+                    "background": "#f8faf3",
+                    "tertiary-fixed-dim": "#eaf0af",
+                    "surface-container-highest": "#dee5d8",
+                    "surface-container": "#ebefe5",
+                    "on-tertiary-fixed-variant": "#686e39",
+                    "tertiary-fixed": "#f8ffbc",
+                    "on-background": "#2d342c",
+                    "error-dim": "#791903",
+                    "surface-container-low": "#f1f5ec",
+                    "on-tertiary": "#f8febc",
+                    "on-secondary-fixed": "#334332",
+                    "on-tertiary-container": "#5d632f",
+                    "primary": "#3e6942",
+                    "on-primary-container": "#305b36",
+                    "primary-fixed-dim": "#b0e1b0",
+                    "on-secondary": "#ebffe6",
+                    "inverse-primary": "#c6f8c6",
+                    "mint": "#00C853",
+                    "light-green": "#C8E6C9",
+                    "deep-green": "#1B5E20"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "md": "16px",
+                    "sm": "12px",
+                    "lg": "24px",
+                    "gutter": "24px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "xs": "4px",
+                    "margin-page": "20px",
+                    "stack-lg": "24px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "gutter-card": "12px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "caption": ["13px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { background-color: #F8FAF3; }
+        .custom-radio:checked {
+            background-color: #00C853;
+            border-color: #00C853;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface antialiased">
+<!-- Top App Bar -->
+<header class="sticky top-0 w-full z-50 flex items-center px-margin-page h-16 bg-surface shadow-sm">
+<button class="mr-4 p-2 rounded-full hover:bg-surface-container-high transition-colors active:scale-[0.98]">
+<span class="material-symbols-outlined text-mint">arrow_back</span>
+</button>
+<h1 class="text-headline-sm font-bold text-on-surface flex-grow">重复规则</h1>
+<div class="w-10"></div>
+</header>
+<main class="px-margin-page py-stack-lg max-w-md mx-auto space-y-stack-lg">
+<!-- Repeat Type Section -->
+<section class="space-y-stack-sm">
+<h2 class="text-on-surface-variant font-label-sm px-1 uppercase tracking-wider">重复频率</h2>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<!-- Row 1 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-surface-container-low transition-colors border-b border-outline-variant">
+<span class="font-body-lg text-on-surface">不重复</span>
+<input checked="" class="w-5 h-5 custom-radio text-mint border-outline focus:ring-mint focus:ring-offset-0 rounded-full" name="repeat_type" type="radio"/>
+</label>
+<!-- Row 2 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-surface-container-low transition-colors border-b border-outline-variant">
+<span class="font-body-lg text-on-surface">每日重复</span>
+<input class="w-5 h-5 custom-radio text-mint border-outline focus:ring-mint focus:ring-offset-0 rounded-full" name="repeat_type" type="radio"/>
+</label>
+<!-- Row 3 -->
+<label class="flex items-center justify-between p-4 cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="font-body-lg text-on-surface">自定义周重复</span>
+<input class="w-5 h-5 custom-radio text-mint border-outline focus:ring-mint focus:ring-offset-0 rounded-full" name="repeat_type" type="radio"/>
+</label>
+</div>
+</section>
+<!-- Custom Week Multi-Select -->
+<section class="space-y-stack-sm">
+<h2 class="text-on-surface-variant font-label-sm px-1 uppercase tracking-wider">选择重复周天</h2>
+<div class="flex justify-between items-center bg-surface-container-lowest p-gutter-card rounded-xl border border-outline-variant shadow-sm">
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-mint text-white active:scale-95 transition-all">一</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-mint text-white active:scale-95 transition-all">二</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-mint text-white active:scale-95 transition-all">三</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-mint text-white active:scale-95 transition-all">四</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-mint text-white active:scale-95 transition-all">五</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-surface-container-highest text-on-surface-variant active:scale-95 transition-all">六</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-caption bg-surface-container-highest text-on-surface-variant active:scale-95 transition-all">日</button>
+</div>
+</section>
+<!-- Date Range Section -->
+<section class="space-y-stack-sm">
+<h2 class="text-on-surface-variant font-label-sm px-1 uppercase tracking-wider">重复有效期</h2>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm divide-y divide-outline-variant">
+<div class="flex items-center justify-between p-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">calendar_today</span>
+<span class="font-body-md text-on-surface">开始日期</span>
+</div>
+<div class="flex items-center gap-2 text-mint font-semibold font-body-lg">
+<span>2023年10月20日</span>
+<span class="material-symbols-outlined text-caption">chevron_right</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline">event_busy</span>
+<span class="font-body-md text-on-surface">结束日期</span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-body-lg">
+<span>永不结束</span>
+<span class="material-symbols-outlined text-caption">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Templates Chips -->
+<section class="space-y-stack-sm">
+<h2 class="text-on-surface-variant font-label-sm px-1 uppercase tracking-wider">常用模板</h2>
+<div class="flex flex-wrap gap-3">
+<button class="px-4 py-2 rounded-full bg-mint/10 text-mint font-label-md border border-mint/20 hover:bg-mint/20 transition-colors">
+                    本周每日
+                </button>
+<button class="px-4 py-2 rounded-full bg-secondary-container/30 text-on-secondary-container font-label-md border border-secondary-container/50 hover:bg-secondary-container/50 transition-colors">
+                    工作日重复
+                </button>
+</div>
+</section>
+<!-- Informational Card -->
+<div class="relative overflow-hidden rounded-2xl aspect-[3.5/1] bg-light-green flex items-center p-6 text-deep-green">
+<div class="relative z-10">
+<h3 class="text-headline-sm font-bold mb-1">规划有道</h3>
+<p class="text-caption opacity-90">合理设置重复规则，减少繁琐操作。</p>
+</div>
+<div class="absolute right-[-10%] top-0 h-full w-1/2 opacity-20">
+<span class="material-symbols-outlined text-[120px] scale-150">event_repeat</span>
+</div>
+<div class="absolute inset-0 bg-gradient-to-r from-light-green via-light-green/80 to-transparent"></div>
+</div>
+</main>
+<!-- Bottom Action Button -->
+<footer class="fixed bottom-0 left-0 w-full p-margin-page bg-surface/80 backdrop-blur-md">
+<button class="w-full h-14 bg-light-green text-deep-green font-headline-sm rounded-xl shadow-lg shadow-black/5 active:scale-[0.98] transition-all duration-200">
+            确定
+        </button>
+</footer>
+<!-- Spacing -->
+<div class="h-32"></div>
+</body></html>

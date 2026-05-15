@@ -1,0 +1,73 @@
+<template>
+  <view class="row">
+    <view class="btn" @click="emit('edit')">
+      <view class="btn__ico">
+        <uni-icons type="compose" size="40rpx" color="#3e6942" />
+      </view>
+      <text class="btn__txt btn__txt--pri">编辑</text>
+    </view>
+    <view class="btn" @click="emit('delete')">
+      <view class="btn__ico">
+        <uni-icons type="trash" size="40rpx" color="#a73b21" />
+      </view>
+      <text class="btn__txt btn__txt--err">删除</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  const emit = defineEmits(['edit', 'delete'])
+</script>
+
+<style scoped>
+  .row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    padding-top: 8rpx;
+  }
+
+  .btn {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-top: 24rpx;
+    padding-bottom: 24rpx;
+    margin-right: 24rpx;
+    border-radius: 16rpx;
+    background-color: #ffffff;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #adb4a8;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .btn:last-child {
+    margin-right: 0;
+  }
+
+  .btn__ico {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16rpx;
+  }
+
+  .btn__txt {
+    font-size: 28rpx;
+    font-weight: 600;
+    line-height: 40rpx;
+    letter-spacing: 0.05em;
+  }
+
+  .btn__txt--pri {
+    color: #3e6942;
+  }
+
+  .btn__txt--err {
+    color: #a73b21;
+  }
+</style>

@@ -1,0 +1,65 @@
+<template>
+  <view>
+    <view class="status-spacer" :style="'height:' + statusBarHeight + 'px'"></view>
+    <view class="top-bar">
+      <view class="top-bar__left" @click="emit('back')">
+        <view class="top-bar__back-hit">
+          <uni-icons type="back" size="40rpx" color="#3e6942" />
+        </view>
+        <text class="top-bar__title">详情内容</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  defineProps({
+    statusBarHeight: { type: Number, default: 20 },
+  })
+
+  const emit = defineEmits(['back'])
+</script>
+
+<style scoped>
+  .status-spacer {
+    width: 750rpx;
+    background-color: #f8faf3;
+  }
+
+  .top-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 750rpx;
+    height: 128rpx;
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    background-color: #f8faf3;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  }
+
+  .top-bar__left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .top-bar__back-hit {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 72rpx;
+    height: 72rpx;
+    margin-right: 32rpx;
+    border-radius: 9999rpx;
+  }
+
+  .top-bar__title {
+    font-size: 40rpx;
+    font-weight: 700;
+    line-height: 56rpx;
+    color: #2d342c;
+  }
+</style>

@@ -1,0 +1,75 @@
+<template>
+  <view class="row" :class="[hasBorder ? 'row--bd' : '']" @click="emit('pick')">
+    <text class="row__title">{{ title }}</text>
+    <view class="row__radio" :class="selected ? 'row__radio--on' : 'row__radio--off'">
+      <view v-if="selected" class="row__radio-dot"></view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  defineProps({
+    title: { type: String, required: true },
+    selected: { type: Boolean, default: false },
+    hasBorder: { type: Boolean, default: true },
+  })
+
+  const emit = defineEmits(['pick'])
+</script>
+
+<style scoped>
+  .row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 32rpx;
+    padding-right: 32rpx;
+    padding-top: 32rpx;
+    padding-bottom: 32rpx;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .row--bd {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: #adb4a8;
+  }
+
+  .row__title {
+    font-size: 36rpx;
+    font-weight: 400;
+    line-height: 56rpx;
+    color: #2d342c;
+  }
+
+  .row__radio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 9999rpx;
+    border-width: 2px;
+    border-style: solid;
+    flex-shrink: 0;
+  }
+
+  .row__radio--off {
+    border-color: #767d72;
+    background-color: #ffffff;
+  }
+
+  .row__radio--on {
+    border-color: #00c853;
+    background-color: #00c853;
+  }
+
+  .row__radio-dot {
+    width: 16rpx;
+    height: 16rpx;
+    border-radius: 9999rpx;
+    background-color: #ffffff;
+  }
+</style>

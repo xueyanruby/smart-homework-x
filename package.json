@@ -1,0 +1,7 @@
+{
+  "name": "smart-homework-x",
+  "private": true,
+  "dependencies": {
+    "@dcloudio/uni-ui": "^1.5.12"
+  }
+}

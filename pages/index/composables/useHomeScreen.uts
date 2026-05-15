@@ -1,0 +1,297 @@
+/** 首页：状态栏、筛选、按周滑动日期条、按日过滤任务、角标与空态 */
+
+import { computed } from 'vue'
+import {
+  loadTasks,
+  markDone,
+  markUndone,
+  taskIsDoneOnDayKey,
+  type HomeworkTask,
+} from '../../../shared/homeworkStore.uts'
+import {
+  addDays,
+  buildWeekPages,
+  columnIndexForKeyInWeek,
+  dayKeyFromDate,
+  dotDateLabelFromChineseLabel,
+  findWeekIndexForDayKey,
+  firstSelectableKeyInWeek,
+  formatSectionTitle,
+  stripTime,
+} from '../../../shared/homeworkDateUtils.uts'
+import { taskShowsOnCalendarDay } from '../../../shared/homeworkRepeatMatch.uts'
+
+type TaskCardItem = {
+  /** v-for 唯一键 */
+  key : string
+  taskId : string
+  occurrenceDayKey : number
+  title : string
+  subject : string
+  subjectKind : string
+  /** 有重复时首行：重复规则文案；无重复为空（不显示图标行） */
+  dueRangeMain : string
+  /** 完成/生效时间文案行 */
+  dueRangeSub : string
+  trailing : string
+  muted : boolean
+  titleDone : boolean
+}
+
+function taskHasRepeat(task : HomeworkTask) : boolean {
+  const r = task.repeatLabel != null ? task.repeatLabel : ''
+  if (r == '不重复' || r == '无重复') {
+    return false
+  }
+  return r.length > 0
+}
+
+function taskCardDueLines(task : HomeworkTask) : { main : string; sub : string } {
+  const completion =
+    dotDateLabelFromChineseLabel(task.startDateLabel) +
+    ' - ' +
+    dotDateLabelFromChineseLabel(task.endDateLabel)
+  if (!taskHasRepeat(task)) {
+    return { main: '', sub: '完成时间：' + completion }
+  }
+  const rule = task.repeatLabel != null ? task.repeatLabel : ''
+  const hasValid =
+    task.repeatValidStartLabel != null && task.repeatValidStartLabel.length > 0
+  if (hasValid) {
+    const tail = task.repeatValidEndNever
+      ? '永不结束'
+      : task.repeatValidEndLabel != null && task.repeatValidEndLabel.length > 0
+        ? dotDateLabelFromChineseLabel(task.repeatValidEndLabel)
+        : '—'
+    return {
+      main: rule,
+      sub:
+        '生效时间：' +
+        dotDateLabelFromChineseLabel(task.repeatValidStartLabel) +
+        ' - ' +
+        tail,
+    }
+  }
+  return { main: rule, sub: '完成时间：' + completion }
+}
+
+function subjectLabel(kind : string, customName : string) : string {
+  if (kind == 'custom') {
+    const x = customName != null ? customName.trim() : ''
+    return x.length > 0 ? x : '其他'
+  }
+  if (kind == 'math') return '数学'
+  if (kind == 'en') return '英语'
+  if (kind == 'zh') return '语文'
+  return '其他'
+}
+
+type SwiperWeekChangeEvent = {
+  detail : { current : number }
+}
+
+export function useHomeScreen() {
+  const statusBarHeight = ref(20)
+  const filterIndex = ref(0)
+  const filterTabs = ref(['全部', '未完成', '已完成'])
+
+  /** 用于生成 ±30 天周历的锚点时间 */
+  const rangeClock = ref(0)
+  /** 选中的日历日 */
+  const selectedDayKey = ref(-1)
+  const weekSwiperIndex = ref(0)
+  const lastWeekSwiperIndex = ref(0)
+
+  const weekPages = computed(() => {
+    const anchor = rangeClock.value > 0 ? new Date(rangeClock.value) : new Date()
+    return buildWeekPages(anchor)
+  })
+
+  const allTasks = ref(loadTasks())
+
+  const tasks = computed<TaskCardItem[]>(() => {
+    const fi = filterIndex.value
+    const all = allTasks.value
+    const dk = selectedDayKey.value
+    const result : TaskCardItem[] = []
+    if (dk < 0) {
+      return result
+    }
+    for (let i = 0; i < all.length; i++) {
+      const t = all[i]
+      if (!taskShowsOnCalendarDay(t, dk)) {
+        continue
+      }
+      const doneThisDay = taskIsDoneOnDayKey(t, dk)
+      if (fi == 1 && doneThisDay) {
+        continue
+      }
+      if (fi == 2 && !doneThisDay) {
+        continue
+      }
+      const due = taskCardDueLines(t)
+      result.push({
+        key: t.id + '|' + dk.toString(),
+        taskId: t.id,
+        occurrenceDayKey: dk,
+        title: t.title,
+        subject: subjectLabel(t.subject, t.customSubjectName),
+        subjectKind: t.subject,
+        dueRangeMain: due.main,
+        dueRangeSub: due.sub,
+        trailing: doneThisDay ? 'donePill' : 'complete',
+        muted: doneThisDay,
+        titleDone: doneThisDay,
+      })
+    }
+    return result
+  })
+
+  const sectionTitle = computed(() => {
+    if (selectedDayKey.value < 0) {
+      return ''
+    }
+    return formatSectionTitle(selectedDayKey.value)
+  })
+
+  const syncSwiperToSelection = () => {
+    const pages = weekPages.value
+    if (pages.length == 0) {
+      return
+    }
+    const wi = findWeekIndexForDayKey(pages, selectedDayKey.value)
+    weekSwiperIndex.value = wi
+    lastWeekSwiperIndex.value = wi
+  }
+
+  const clampSelectionToRange = () => {
+    const anchor = rangeClock.value > 0 ? new Date(rangeClock.value) : new Date()
+    const t0 = stripTime(anchor)
+    const minK = dayKeyFromDate(addDays(t0, -30))
+    const maxK = dayKeyFromDate(addDays(t0, 30))
+    let k = selectedDayKey.value
+    if (k < minK) {
+      k = minK
+    }
+    if (k > maxK) {
+      k = maxK
+    }
+    selectedDayKey.value = k
+  }
+
+  const loadList = () => {
+    rangeClock.value = Date.now()
+    allTasks.value = loadTasks()
+    if (selectedDayKey.value < 0) {
+      selectedDayKey.value = dayKeyFromDate(new Date(rangeClock.value))
+    } else {
+      clampSelectionToRange()
+    }
+    syncSwiperToSelection()
+  }
+
+  const initLayout = () => {
+    const info = uni.getSystemInfoSync()
+    const h = info.statusBarHeight
+    statusBarHeight.value = h != null ? h : 20
+    loadList()
+  }
+
+  const selectDateByKey = (dayKey : number) => {
+    const pages = weekPages.value
+    if (pages.length == 0) {
+      return
+    }
+    for (let wi = 0; wi < pages.length; wi++) {
+      const wk = pages[wi]
+      for (let di = 0; di < wk.length; di++) {
+        const c = wk[di]
+        if (c.dayKey != dayKey) {
+          continue
+        }
+        if (c.dim) {
+          return
+        }
+        selectedDayKey.value = dayKey
+        weekSwiperIndex.value = wi
+        lastWeekSwiperIndex.value = wi
+        return
+      }
+    }
+  }
+
+  const onWeekSwiperChange = (e : SwiperWeekChangeEvent) => {
+    const pages = weekPages.value
+    if (pages.length == 0) {
+      return
+    }
+    const det = e.detail
+    if (det == null) {
+      return
+    }
+    const cur = det.current
+    const oldWi = lastWeekSwiperIndex.value
+    if (cur == oldWi) {
+      return
+    }
+    const oldWiSafe = oldWi >= 0 && oldWi < pages.length ? oldWi : 0
+    const oldWeek = pages[oldWiSafe]
+    const newWeek = pages[cur]
+    if (newWeek == null || newWeek.length < 7) {
+      return
+    }
+    lastWeekSwiperIndex.value = cur
+    weekSwiperIndex.value = cur
+    const col = columnIndexForKeyInWeek(oldWeek, selectedDayKey.value)
+    let nextKey = newWeek[col].dayKey
+    if (newWeek[col].dim) {
+      nextKey = firstSelectableKeyInWeek(newWeek)
+    }
+    selectedDayKey.value = nextKey
+  }
+
+  const onCompleteTask = (taskId : string, occurrenceDayKey : number) => {
+    markDone(taskId, occurrenceDayKey)
+    loadList()
+    uni.showToast({ title: '已标记完成', icon: 'none' })
+  }
+
+  const onUncompleteTask = (taskId : string, occurrenceDayKey : number) => {
+    markUndone(taskId, occurrenceDayKey)
+    loadList()
+    uni.showToast({ title: '已取消完成', icon: 'none' })
+  }
+
+  const onOpenTask = (taskId : string, occurrenceDayKey : number) => {
+    uni.navigateTo({
+      url:
+        '/pages/detail/index?taskKey=' +
+        encodeURIComponent(taskId) +
+        '&dayKey=' +
+        occurrenceDayKey.toString(),
+    })
+  }
+
+  const onAddTask = () => {
+    uni.navigateTo({ url: '/pages/add/index' })
+  }
+
+  return {
+    statusBarHeight,
+    filterIndex,
+    filterTabs,
+    weekPages,
+    weekSwiperIndex,
+    selectedDayKey,
+    sectionTitle,
+    tasks,
+    initLayout,
+    selectDateByKey,
+    onWeekSwiperChange,
+    onCompleteTask,
+    onUncompleteTask,
+    onOpenTask,
+    onAddTask,
+    loadList,
+  }
+}

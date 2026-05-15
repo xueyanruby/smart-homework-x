@@ -1,0 +1,68 @@
+<template>
+  <view class="footer">
+    <view class="footer__inner">
+      <view class="footer__btn" :class="isSubmitting ? 'footer__btn--disabled' : ''" @click="onSave">
+        <text class="footer__btn-text">保存</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  const props = defineProps({
+    isSubmitting: { type: Boolean, default: false },
+  })
+
+  const emit = defineEmits(['save'])
+
+  const onSave = () => {
+    if (props.isSubmitting) {
+      return
+    }
+    emit('save')
+  }
+</script>
+
+<style scoped>
+  .footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    width: 750rpx;
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    padding-top: 24rpx;
+    padding-bottom: 32rpx;
+    background-color: #f8faf3;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-color: #e0e2ed;
+  }
+
+  .footer__inner {
+    width: 100%;
+    max-width: 750rpx;
+  }
+
+  .footer__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 112rpx;
+    border-radius: 24rpx;
+    background-color: #beefbe;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .footer__btn--disabled {
+    opacity: 0.6;
+  }
+
+  .footer__btn-text {
+    font-size: 36rpx;
+    font-weight: 700;
+    color: #305b36;
+  }
+</style>

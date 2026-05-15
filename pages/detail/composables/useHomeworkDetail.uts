@@ -1,0 +1,255 @@
+/** 作业详情：从本地存储加载任务，支持标记完成与删除 */
+
+import { reactive, ref } from 'vue'
+import {
+  getTaskById,
+  markDone,
+  markUndone,
+  deleteTask,
+  taskIsDoneOnDayKey,
+  type HomeworkTask,
+} from '../../../shared/homeworkStore.uts'
+import { dayKeyFromDate, parseChineseDateLabel, stripTime } from '../../../shared/homeworkDateUtils.uts'
+
+type DetailFields = {
+  statusLabel: string
+  subjectTag: string
+  title: string
+  dateRangeLine: string
+  descriptionTitle: string
+  descriptionBody: string
+  imagePaths: string[]
+  repeatTitle: string
+  repeatSub: string
+}
+
+function subjectTagFor(kind : string, customName : string) : string {
+  if (kind == 'custom') {
+    const t = customName != null ? customName.trim() : ''
+    return t.length > 0 ? t : '其他'
+  }
+  if (kind == 'math') return '数学'
+  if (kind == 'en') return '英语'
+  if (kind == 'zh') return '语文'
+  return '其他'
+}
+
+// Stitch 演示稿兜底（store 中找不到 taskKey 时显示）
+function applyStitchFallback(d : DetailFields) {
+  d.statusLabel = '未完成'
+  d.subjectTag = '数学'
+  d.title = '完成高等数学练习册第42-45页'
+  d.dateRangeLine = '完成时间：2023.10.24 - 2023.10.27'
+  d.descriptionTitle = '任务描述'
+  d.descriptionBody =
+    '需在周三课前完成微积分第二章的课后习题。重点练习链式法则和隐函数求导。完成后请拍照上传至此，方便统一查阅。如果有不确定的题目请标记出来。'
+  d.imagePaths.splice(0, d.imagePaths.length)
+  d.imagePaths.push(
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuDPQyiB9tg4Gh5eMAz2jHtfNDW1OL9jm6OV8jMEsO3mUyiB7bkQIRvzbQMGZjdDlrX_tzubEOIVpH6y9eEmk41tUfxCSfgT78y8_Ix_UAjVSnSAdm-zbUeLmBTrrOq-k37f8hjnmhUx_hmtsfddr8V9M_y_mc915VHcqgiseNmeKbGy1CDrIlIi0xfobq3989OtuDNEewuJOkJi4cvMUcjeLUvCKDuP73JnWAiIrDD3A3Vd_uBy527cYcinh75n7zZzJcmwg9cfZlp0',
+  )
+  d.imagePaths.push(
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuAfvgeUk3It2azLzFftGbHSKIV2IX-97GtFvO9lfrxrE6e7ri37d3ipEasihGep5WcAI2-V-duwSEaL-Bt5L-FXLrw6BGNJfa11rJjavCT0kDImHfhLJX4cUs6_6RUtTW1RcX1Ri8JTxKLkAvgc99iD_7R2AQi8LVqV_kYbja1aKuxD_uLTj7ETdjQJJNoGFgs00MOIi-uEe90M0UCeEE2H-46xUQx2KNJy_CUtlH_pKoJp-SBNs7DunK2lR_a1pGZgZsHFF7ElVJSW',
+  )
+  d.imagePaths.push(
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuANEsQekpQEhoXhr6X3DUefk5tc8MhVRt96gElXwIEp9GszoQTsXVM7Q0znrTnpWYRvezSSWtY0sLywt5NPgfmxyN6GgSzgYJAaZa_4j0Mj5iKyVZd4u69YJ8CsB6_XMexiB26R_Li_lUUJU-EPf5n5qRUVZAmeJVQUDek-0ioZIsWa-zQW4H7PGH8j7144_E_Qcm0J6lAtU1rE8ix0yKwvyoE_54LGWyKTChdTte2_SpT10a7KdZ4mUYtUxE_wsDMu34vHqEmiViSM',
+  )
+  d.repeatTitle = '重复类型：每周重复'
+  d.repeatSub = '每周三 08:00 自动提醒'
+}
+
+function taskHasRepeat(task : HomeworkTask) : boolean {
+  const r = task.repeatLabel != null ? task.repeatLabel : ''
+  if (r == '不重复' || r == '无重复') {
+    return false
+  }
+  return r.length > 0
+}
+
+function fillDetailFromTask(task : HomeworkTask, d : DetailFields, occurrenceDayKey : number) {
+  const done = taskIsDoneOnDayKey(task, occurrenceDayKey)
+  d.statusLabel = done ? '已完成' : '未完成'
+  d.subjectTag = subjectTagFor(task.subject, task.customSubjectName)
+  d.title = task.title
+  const hasRepeatValid =
+    taskHasRepeat(task) &&
+    task.repeatValidStartLabel != null &&
+    task.repeatValidStartLabel.length > 0
+  if (hasRepeatValid) {
+    const tail = task.repeatValidEndNever
+      ? '永不结束'
+      : task.repeatValidEndLabel != null && task.repeatValidEndLabel.length > 0
+        ? task.repeatValidEndLabel
+        : '—'
+    d.dateRangeLine = '生效时间：' + task.repeatValidStartLabel + ' - ' + tail
+  } else {
+    d.dateRangeLine = '完成时间：' + task.startDateLabel + ' - ' + task.endDateLabel
+  }
+  d.descriptionTitle = '任务描述'
+  d.descriptionBody = task.description.length > 0 ? task.description : '（无描述）'
+  d.imagePaths.splice(0, d.imagePaths.length)
+  const paths = task.imagePaths
+  for (let i = 0; i < paths.length; i++) {
+    d.imagePaths.push(paths[i])
+  }
+  d.repeatTitle = '重复类型：' + task.repeatLabel
+  d.repeatSub = ''
+}
+
+function parseDayKeyFromOpts(opts : UTSJSONObject | null) : number {
+  if (opts == null) {
+    return -1
+  }
+  const r = opts['dayKey']
+  if (r == null) {
+    return -1
+  }
+  const n = parseInt(r as string)
+  if (isNaN(n)) {
+    return -1
+  }
+  return n
+}
+
+function resolveOccurrenceDayKey(task : HomeworkTask, fromQuery : number) : number {
+  if (fromQuery >= 0) {
+    return fromQuery
+  }
+  const fk = parseChineseDateLabel(task.startDateLabel)
+  if (fk >= 0) {
+    return fk
+  }
+  return dayKeyFromDate(stripTime(new Date()))
+}
+
+export function useHomeworkDetail() {
+  const statusBarHeight = ref(20)
+  // 当前详情任务的 id，用于完成/删除操作；不暴露给模板
+  const currentTaskId = ref('')
+  /** 从首页进入或 query 解析；重复作业按「该日」展示完成态 */
+  const storedOccurrenceDayKey = ref(-1)
+  /** 用于从编辑页返回时 onShow 刷新 */
+  const storedTaskKey = ref('')
+  /** 底部栏「已完成」状态：uni-app x 子组件对 reactive 内表达式绑定不稳定，单独用 ref 传布尔 */
+  const detailCompleted = ref(false)
+
+  const detail = reactive({
+    statusLabel: '未完成',
+    subjectTag: '数学',
+    title: '',
+    dateRangeLine: '',
+    descriptionTitle: '任务描述',
+    descriptionBody: '',
+    imagePaths: [] as string[],
+    repeatTitle: '',
+    repeatSub: '',
+  } as DetailFields)
+
+  const initDetail = (opts : UTSJSONObject | null) => {
+    const info = uni.getSystemInfoSync()
+    const h = info.statusBarHeight
+    statusBarHeight.value = h != null ? h : 20
+
+    let key = ''
+    if (opts != null) {
+      const k = opts['taskKey']
+      if (k != null) {
+        key = k as string
+      }
+    }
+
+    const task = key.length > 0 ? getTaskById(key) : null
+    if (task != null) {
+      storedTaskKey.value = key
+      currentTaskId.value = task.id
+      const dk = parseDayKeyFromOpts(opts)
+      const occ = resolveOccurrenceDayKey(task, dk)
+      storedOccurrenceDayKey.value = occ
+      fillDetailFromTask(task, detail, occ)
+      detailCompleted.value = taskIsDoneOnDayKey(task, occ)
+    } else {
+      storedTaskKey.value = ''
+      storedOccurrenceDayKey.value = -1
+      // 兜底：显示 Stitch 演示数据（向下兼容直接打开页面的场景）
+      currentTaskId.value = ''
+      detailCompleted.value = false
+      applyStitchFallback(detail)
+    }
+  }
+
+  const refreshDetail = () => {
+    const k = storedTaskKey.value
+    if (k.length == 0) {
+      return
+    }
+    const task = getTaskById(k)
+    if (task != null) {
+      currentTaskId.value = task.id
+      const occ =
+        storedOccurrenceDayKey.value >= 0
+          ? storedOccurrenceDayKey.value
+          : resolveOccurrenceDayKey(task, -1)
+      storedOccurrenceDayKey.value = occ
+      fillDetailFromTask(task, detail, occ)
+      detailCompleted.value = taskIsDoneOnDayKey(task, occ)
+    }
+  }
+
+  const goBack = () => {
+    uni.navigateBack({})
+  }
+
+  const onEdit = () => {
+    const id = currentTaskId.value
+    if (id.length == 0) {
+      uni.showToast({ title: '演示数据无法编辑', icon: 'none' })
+      return
+    }
+    uni.navigateTo({ url: '/pages/add/index?taskKey=' + id })
+  }
+
+  const onDelete = () => {
+    const id = currentTaskId.value
+    if (id.length > 0) {
+      deleteTask(id)
+    }
+    uni.showToast({ title: '已删除', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateBack({})
+    }, 600)
+  }
+
+  const onMarkComplete = () => {
+    const id = currentTaskId.value
+    const occ = storedOccurrenceDayKey.value
+    if (id.length > 0 && occ >= 0) {
+      markDone(id, occ)
+    }
+    detail.statusLabel = '已完成'
+    detailCompleted.value = true
+    uni.showToast({ title: '已标记为已完成', icon: 'success' })
+  }
+
+  const onUnmarkComplete = () => {
+    const id = currentTaskId.value
+    const occ = storedOccurrenceDayKey.value
+    if (id.length > 0 && occ >= 0) {
+      markUndone(id, occ)
+    }
+    detail.statusLabel = '未完成'
+    detailCompleted.value = false
+    uni.showToast({ title: '已取消完成', icon: 'success' })
+  }
+
+  return {
+    statusBarHeight,
+    detail,
+    detailCompleted,
+    initDetail,
+    refreshDetail,
+    goBack,
+    onEdit,
+    onDelete,
+    onMarkComplete,
+    onUnmarkComplete,
+  }
+}

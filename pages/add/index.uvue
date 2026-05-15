@@ -1,0 +1,90 @@
+<template>
+  <view class="page">
+    <add-homework-top-bar :status-bar-height="statusBarHeight" :title="pageTitle" @cancel="cancel"></add-homework-top-bar>
+
+    <scroll-view class="main-scroll" scroll-y="true">
+      <view class="scroll-inner">
+        <add-homework-form-body
+          :form="form"
+          @updatetitle="onUpdateTitle"
+          @updatedesc="onUpdateDesc"
+          @updatesubject="onUpdateSubject"
+          @openimage="onTapImageUpload"
+          @updatestartdate="onUpdateStartDate"
+          @updateenddate="onUpdateEndDate"
+          @updatecustomsubject="onUpdateCustomSubject"
+          @removeimage="onRemoveImage"
+          @openrepeat="onTapRepeat"
+        ></add-homework-form-body>
+      </view>
+    </scroll-view>
+
+    <add-homework-footer :is-submitting="isSubmitting" @save="submit"></add-homework-footer>
+  </view>
+</template>
+
+<script setup>
+  import { useAddHomeworkForm } from './composables/useAddHomeworkForm.uts'
+  import AddHomeworkTopBar from './modules/AddHomeworkTopBar.uvue'
+  import AddHomeworkFormBody from './modules/AddHomeworkFormBody.uvue'
+  import AddHomeworkFooter from './modules/AddHomeworkFooter.uvue'
+
+  const {
+    statusBarHeight,
+    pageTitle,
+    form,
+    isSubmitting,
+    initAddPage,
+    cancel,
+    submit,
+    onTapImageUpload,
+    onTapRepeat,
+    applyRepeatResultFromStorage,
+    onUpdateSubject,
+    onUpdateStartDate,
+    onUpdateEndDate,
+    onUpdateCustomSubject,
+    onRemoveImage,
+  } = useAddHomeworkForm()
+
+  const onUpdateTitle = (v : string) => {
+    form.title = v
+  }
+
+  const onUpdateDesc = (v : string) => {
+    form.description = v
+  }
+
+  onLoad((opts) => {
+    if (opts != null) {
+      initAddPage(opts as UTSJSONObject)
+    } else {
+      initAddPage(null)
+    }
+  })
+
+  onShow(() => {
+    applyRepeatResultFromStorage()
+  })
+</script>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    width: 750rpx;
+    height: 100%;
+    background-color: #f8faf3;
+  }
+
+  .main-scroll {
+    flex: 1;
+    width: 750rpx;
+  }
+
+  .scroll-inner {
+    display: flex;
+    flex-direction: column;
+    width: 750rpx;
+  }
+</style>

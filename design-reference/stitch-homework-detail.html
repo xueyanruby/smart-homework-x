@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>作业详情</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#4f604d",
+                    "surface-tint": "#3e6942",
+                    "on-surface": "#2d342c",
+                    "surface-container-low": "#f1f5ec",
+                    "primary-fixed-dim": "#b0e1b0",
+                    "secondary-dim": "#465745",
+                    "on-primary-fixed": "#1d4825",
+                    "surface-container": "#ebefe5",
+                    "surface-variant": "#dee5d8",
+                    "outline": "#767d72",
+                    "tertiary-dim": "#515725",
+                    "on-error-container": "#6e1400",
+                    "surface-dim": "#d5dcd0",
+                    "on-tertiary-fixed": "#4b501f",
+                    "tertiary-container": "#f8ffbc",
+                    "inverse-surface": "#0c0f0b",
+                    "surface": "#f8faf3",
+                    "secondary-fixed-dim": "#c6dac2",
+                    "background": "#f8faf3",
+                    "surface-bright": "#f8faf3",
+                    "surface-container-high": "#e4eadf",
+                    "secondary-container": "#d4e8d0",
+                    "on-primary-fixed-variant": "#3a653f",
+                    "on-background": "#2d342c",
+                    "surface-container-highest": "#dee5d8",
+                    "error-dim": "#791903",
+                    "tertiary": "#5d6330",
+                    "secondary": "#526451",
+                    "primary-fixed": "#beefbe",
+                    "on-tertiary-container": "#5d632f",
+                    "error": "#a73b21",
+                    "on-tertiary-fixed-variant": "#686e39",
+                    "on-secondary": "#ebffe6",
+                    "on-secondary-container": "#455644",
+                    "on-primary": "#e9ffe5",
+                    "tertiary-fixed": "#f8ffbc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#334332",
+                    "on-primary-container": "#305b36",
+                    "primary": "#3e6942",
+                    "primary-dim": "#325c37",
+                    "inverse-primary": "#c6f8c6",
+                    "on-surface-variant": "#5a6157",
+                    "inverse-on-surface": "#9b9e97",
+                    "tertiary-fixed-dim": "#eaf0af",
+                    "outline-variant": "#adb4a8",
+                    "on-error": "#fff7f6",
+                    "primary-container": "#beefbe",
+                    "secondary-fixed": "#d4e8d0",
+                    "error-container": "#fd795a",
+                    "on-tertiary": "#f8febc",
+                    "brand-mint": "#00C853",
+                    "action-light-green": "#C8E6C9",
+                    "action-dark-green": "#1B5E20"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-card": "12px",
+                    "space-unit": "4px",
+                    "stack-sm": "8px",
+                    "margin-page": "20px",
+                    "stack-lg": "24px",
+                    "stack-md": "16px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "caption": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "h2": ["Inter"],
+                    "h1": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "caption": ["13px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "h2": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "h1": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["17px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "body-md": ["15px", {"lineHeight": "22px", "letterSpacing": "0", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { 
+            background-color: #f8faf3; 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ambient-glow { 
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05); 
+        }
+        .material-symbols-outlined { 
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; 
+        }
+        .glass-effect { 
+            backdrop-filter: blur(20px); 
+            background-color: rgba(248, 250, 243, 0.8); 
+        }
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="text-on-surface min-h-screen pb-32">
+<!-- Header / TopAppBar -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-margin-page h-16 bg-surface shadow-sm">
+<div class="flex items-center gap-4">
+<button class="active:scale-[0.98] transition-all duration-200 ease-in-out p-2 rounded-full hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<h1 class="text-h2 font-bold text-on-surface">详情内容</h1>
+</div>
+</header>
+<main class="px-margin-page pt-stack-lg space-y-stack-lg">
+<!-- Task Identity Section -->
+<section class="space-y-stack-sm">
+<div class="flex justify-between items-start">
+<span class="px-3 py-1 rounded-full bg-error-container/20 text-error text-label-sm font-label-sm border border-error/10">未完成</span>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-primary-container/20 text-primary">数学</span>
+</div>
+</div>
+<h2 class="text-h1 font-bold text-on-surface">完成高等数学练习册第42-45页</h2>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">event</span>
+<span class="text-caption">完成时间：2023.10.24 - 2023.10.27</span>
+</div>
+</section>
+<!-- Description Section -->
+<section class="p-4 bg-surface-container-lowest rounded-lg border border-outline-variant ambient-glow">
+<h3 class="text-h2 font-bold mb-2 text-on-surface">任务描述</h3>
+<p class="text-body-md text-on-surface-variant leading-relaxed">
+                需在周三课前完成微积分第二章的课后习题。重点练习链式法则和隐函数求导。完成后请拍照上传至此，方便统一查阅。如果有不确定的题目请标记出来。
+            </p>
+</section>
+<!-- Image Gallery -->
+<section>
+<h3 class="text-h2 font-bold mb-stack-sm text-on-surface">附件 (3)</h3>
+<div class="grid grid-cols-2 gap-3">
+<div class="aspect-square rounded-lg overflow-hidden bg-surface-container ambient-glow border border-outline-variant">
+<img alt="Exercise Book Page 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPQyiB9tg4Gh5eMAz2jHtfNDW1OL9jm6OV8jMEsO3mUyiB7bkQIRvzbQMGZjdDlrX_tzubEOIVpH6y9eEmk41tUfxCSfgT78y8_Ix_UAjVSnSAdm-zbUeLmBTrrOq-k37f8hjnmhUx_hmtsfddr8V9M_y_mc915VHcqgiseNmeKbGy1CDrIlIi0xfobq3989OtuDNEewuJOkJi4cvMUcjeLUvCKDuP73JnWAiIrDD3A3Vd_uBy527cYcinh75n7zZzJcmwg9cfZlp0"/>
+</div>
+<div class="grid grid-rows-2 gap-3">
+<div class="rounded-lg overflow-hidden bg-surface-container ambient-glow border border-outline-variant">
+<img alt="Exercise Book Page 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfvgeUk3It2azLzFftGbHSKIV2IX-97GtFvO9lfrxrE6e7ri37d3ipEasihGep5WcAI2-V-duwSEaL-Bt5L-FXLrw6BGNJfa11rJjavCT0kDImHfhLJX4cUs6_6RUtTW1RcX1Ri8JTxKLkAvgc99iD_7R2AQi8LVqV_kYbja1aKuxD_uLTj7ETdjQJJNoGFgs00MOIi-uEe90M0UCeEE2H-46xUQx2KNJy_CUtlH_pKoJp-SBNs7DunK2lR_a1pGZgZsHFF7ElVJSW"/>
+</div>
+<div class="rounded-lg overflow-hidden bg-surface-container ambient-glow border border-outline-variant relative">
+<img alt="Exercise Book Page 3" class="w-full h-full object-cover blur-[2px] opacity-60" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANEsQekpQEhoXhr6X3DUefk5tc8MhVRt96gElXwIEp9GszoQTsXVM7Q0znrTnpWYRvezSSWtY0sLywt5NPgfmxyN6GgSzgYJAaZa_4j0Mj5iKyVZd4u69YJ8CsB6_XMexiB26R_Li_lUUJU-EPf5n5qRUVZAmeJVQUDek-0ioZIsWa-zQW4H7PGH8j7144_E_Qcm0J6lAtU1rE8ix0yKwvyoE_54LGWyKTChdTte2_SpT10a7KdZ4mUYtUxE_wsDMu34vHqEmiViSM"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="text-on-surface font-bold text-h2">+2</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Repetition & Metadata -->
+<section class="flex items-center gap-3 p-4 bg-surface-container-low rounded-lg ambient-glow">
+<span class="material-symbols-outlined text-primary">repeat</span>
+<div class="flex-1">
+<p class="text-on-surface font-body-md">重复类型：每周重复</p>
+<p class="text-on-surface-variant text-caption">每周三 08:00 自动提醒</p>
+</div>
+</section>
+<!-- Bottom Action Buttons in Content -->
+<div class="flex gap-3 pt-2">
+<button class="flex-1 flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-lg text-primary font-label-md bg-surface-container-lowest ambient-glow active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">edit</span>
+                编辑
+            </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-lg text-error font-label-md bg-surface-container-lowest ambient-glow active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+                删除
+            </button>
+</div>
+</main>
+<!-- Bottom Action Area -->
+<div class="fixed bottom-0 left-0 w-full p-margin-page glass-effect border-t border-outline-variant/30 z-40">
+<button class="w-full py-4 rounded-lg bg-action-light-green text-action-dark-green font-h2 active:scale-[0.97] transition-all shadow-lg shadow-action-dark-green/5">
+            标记为已完成
+        </button>
+</div>
+</body></html>

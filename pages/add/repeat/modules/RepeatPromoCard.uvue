@@ -1,0 +1,80 @@
+<template>
+  <view class="promo">
+    <view class="promo__grad"></view>
+    <view class="promo__content">
+      <text class="promo__h">规划有道</text>
+      <text class="promo__p">合理设置重复规则，减少繁琐操作。</text>
+    </view>
+    <view class="promo__bg-ico">
+      <uni-icons type="loop" size="240rpx" color="#1b5e20" />
+    </view>
+  </view>
+</template>
+
+<script setup></script>
+
+<style scoped>
+  .promo {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    min-height: 200rpx;
+    padding-left: 48rpx;
+    padding-right: 48rpx;
+    padding-top: 48rpx;
+    padding-bottom: 48rpx;
+    border-radius: 32rpx;
+    background-color: #c8e6c9;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .promo__grad {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #c8e6c9 0%, rgba(200, 230, 201, 0.85) 55%, rgba(200, 230, 201, 0) 100%);
+  }
+
+  .promo__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    max-width: 65%;
+  }
+
+  .promo__h {
+    font-size: 40rpx;
+    font-weight: 700;
+    line-height: 56rpx;
+    color: #1b5e20;
+    margin-bottom: 8rpx;
+  }
+
+  .promo__p {
+    font-size: 26rpx;
+    font-weight: 500;
+    line-height: 36rpx;
+    letter-spacing: 0.02em;
+    color: #1b5e20;
+    opacity: 0.9;
+  }
+
+  .promo__bg-ico {
+    position: absolute;
+    right: -8%;
+    top: 0;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.2;
+  }
+</style>

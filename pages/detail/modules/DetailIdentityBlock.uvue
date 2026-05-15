@@ -1,0 +1,130 @@
+<template>
+  <view class="root">
+    <view class="row1">
+      <view class="status-pill" :class="done ? 'status-pill--ok' : ''">
+        <text class="status-pill__txt" :class="done ? 'status-pill__txt--ok' : ''">{{ statusLabel }}</text>
+      </view>
+      <view class="tag" :class="subjectEn ? 'tag--en' : ''">
+        <text class="tag__txt" :class="subjectEn ? 'tag__txt--en' : ''">{{ subjectTag }}</text>
+      </view>
+    </view>
+    <text class="h1">{{ title }}</text>
+    <view class="date-row">
+      <view class="date-row__ico-wrap">
+        <uni-icons type="calendar" size="36rpx" color="#5a6157" />
+      </view>
+      <text class="date-row__cap">{{ dateRangeLine }}</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  defineProps({
+    statusLabel: { type: String, default: '' },
+    subjectTag: { type: String, default: '' },
+    title: { type: String, default: '' },
+    dateRangeLine: { type: String, default: '' },
+    done: { type: Boolean, default: false },
+    subjectEn: { type: Boolean, default: false },
+  })
+</script>
+
+<style scoped>
+  .root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .row1 {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .status-pill {
+    padding-left: 24rpx;
+    padding-right: 24rpx;
+    padding-top: 8rpx;
+    padding-bottom: 8rpx;
+    border-radius: 9999rpx;
+    background-color: rgba(253, 121, 90, 0.2);
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(167, 59, 33, 0.1);
+  }
+
+  .status-pill--ok {
+    background-color: rgba(190, 239, 190, 0.2);
+    border-color: rgba(62, 105, 66, 0.1);
+  }
+
+  .status-pill__txt {
+    font-size: 22rpx;
+    font-weight: 600;
+    line-height: 28rpx;
+    letter-spacing: 0.05em;
+    color: #a73b21;
+  }
+
+  .status-pill__txt--ok {
+    color: #3e6942;
+  }
+
+  .tag {
+    padding-left: 16rpx;
+    padding-right: 16rpx;
+    padding-top: 4rpx;
+    padding-bottom: 4rpx;
+    border-radius: 8rpx;
+    background-color: rgba(190, 239, 190, 0.2);
+  }
+
+  .tag--en {
+    background-color: rgba(248, 255, 188, 0.35);
+  }
+
+  .tag__txt {
+    font-size: 22rpx;
+    font-weight: 700;
+    color: #3e6942;
+  }
+
+  .tag__txt--en {
+    color: #5d6330;
+  }
+
+  .h1 {
+    margin-top: 16rpx;
+    font-size: 48rpx;
+    font-weight: 700;
+    line-height: 64rpx;
+    color: #2d342c;
+  }
+
+  .date-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 16rpx;
+  }
+
+  .date-row__ico-wrap {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16rpx;
+    flex-shrink: 0;
+  }
+
+  .date-row__cap {
+    font-size: 26rpx;
+    font-weight: 500;
+    line-height: 36rpx;
+    letter-spacing: 0.02em;
+    color: #5a6157;
+  }
+</style>

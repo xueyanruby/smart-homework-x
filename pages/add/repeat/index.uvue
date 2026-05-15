@@ -1,0 +1,185 @@
+<template>
+  <view class="page">
+    <repeat-rule-top-bar :status-bar-height="statusBarHeight" @back="goBack"></repeat-rule-top-bar>
+
+    <scroll-view class="main-scroll" scroll-y="true">
+      <view class="scroll-inner">
+        <view class="main-pad">
+          <view class="sec">
+            <text class="sec__h">重复频率</text>
+            <view class="card">
+              <repeat-type-radio-row
+                title="不重复"
+                :has-border="true"
+                :selected="selectedType == 'none'"
+                @pick="pickType('none')"
+              ></repeat-type-radio-row>
+              <repeat-type-radio-row
+                title="每日重复"
+                :has-border="true"
+                :selected="selectedType == 'daily'"
+                @pick="pickType('daily')"
+              ></repeat-type-radio-row>
+              <repeat-type-radio-row
+                title="自定义周重复"
+                :has-border="true"
+                :selected="selectedType == 'customWeek'"
+                @pick="pickType('customWeek')"
+              ></repeat-type-radio-row>
+              <repeat-type-radio-row
+                title="每月重复"
+                :has-border="false"
+                :selected="selectedType == 'monthly'"
+                @pick="pickType('monthly')"
+              ></repeat-type-radio-row>
+            </view>
+          </view>
+
+          <view v-if="selectedType == 'customWeek'" class="sec sec--mt">
+            <text class="sec__h">选择重复周天</text>
+            <repeat-weekday-selector :mask="weekMask" @toggle="toggleWeekday"></repeat-weekday-selector>
+          </view>
+
+          <view v-if="selectedType == 'monthly'" class="sec sec--mt">
+            <text class="sec__h">选择每月重复的日期</text>
+            <repeat-month-day-selector :mask="monthDayMask" @toggle="toggleMonthDay"></repeat-month-day-selector>
+          </view>
+
+          <view v-if="selectedType != 'none'" class="sec sec--mt">
+            <view class="sec-head-row">
+              <uni-icons type="calendar" size="32rpx" color="#5a6157" class="sec-head-ico" />
+              <text class="sec__h sec__h--tight">重复有效期</text>
+            </view>
+            <repeat-date-range-block
+              :start-label="startDateLabel"
+              :end-label="endDateLabel"
+              :end-never="endNever"
+              @start-change="onRepeatStartChange"
+              @end-change="onRepeatEndChange"
+              @end-never-change="onRepeatEndNeverChange"
+            ></repeat-date-range-block>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <repeat-rule-footer @confirm="confirmRepeat"></repeat-rule-footer>
+  </view>
+</template>
+
+<script setup>
+  import { useRepeatRulePage } from './composables/useRepeatRulePage.uts'
+  import RepeatRuleTopBar from './modules/RepeatRuleTopBar.uvue'
+  import RepeatTypeRadioRow from './modules/RepeatTypeRadioRow.uvue'
+  import RepeatWeekdaySelector from './modules/RepeatWeekdaySelector.uvue'
+  import RepeatMonthDaySelector from './modules/RepeatMonthDaySelector.uvue'
+  import RepeatDateRangeBlock from './modules/RepeatDateRangeBlock.uvue'
+  import RepeatRuleFooter from './modules/RepeatRuleFooter.uvue'
+
+  const {
+    statusBarHeight,
+    selectedType,
+    weekMask,
+    monthDayMask,
+    startDateLabel,
+    endDateLabel,
+    endNever,
+    initRepeatPage,
+    goBack,
+    pickType,
+    toggleWeekday,
+    toggleMonthDay,
+    onRepeatStartChange,
+    onRepeatEndChange,
+    onRepeatEndNeverChange,
+    confirmRepeat,
+  } = useRepeatRulePage()
+
+  onLoad((opts) => {
+    if (opts != null) {
+      initRepeatPage(opts as UTSJSONObject)
+    } else {
+      initRepeatPage(null)
+    }
+  })
+</script>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    width: 750rpx;
+    height: 100%;
+    background-color: #f8faf3;
+  }
+
+  .main-scroll {
+    flex: 1;
+    width: 750rpx;
+  }
+
+  .scroll-inner {
+    display: flex;
+    flex-direction: column;
+    width: 750rpx;
+    padding-bottom: 400rpx;
+  }
+
+  .main-pad {
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    padding-top: 48rpx;
+    padding-bottom: 48rpx;
+  }
+
+  .sec {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .sec--mt {
+    margin-top: 48rpx;
+  }
+
+  .sec__h {
+    font-size: 24rpx;
+    font-weight: 500;
+    line-height: 32rpx;
+    letter-spacing: 0.05em;
+    color: #5a6157;
+    padding-left: 4rpx;
+    padding-right: 4rpx;
+    margin-bottom: 16rpx;
+  }
+
+  .sec-head-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 16rpx;
+    padding-left: 4rpx;
+    padding-right: 4rpx;
+  }
+
+  .sec-head-ico {
+    margin-right: 8rpx;
+    flex-shrink: 0;
+  }
+
+  .sec__h--tight {
+    margin-bottom: 0;
+    padding-left: 0;
+  }
+
+  .card {
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 24rpx;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #adb4a8;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+</style>

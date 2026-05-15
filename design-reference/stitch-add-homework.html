@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "secondary-container": "#d4e8d0",
+                "error-container": "#fd795a",
+                "surface-container-lowest": "#ffffff",
+                "inverse-on-surface": "#9b9e97",
+                "tertiary-container": "#f8ffbc",
+                "on-surface": "#2d342c",
+                "primary-dim": "#325c37",
+                "surface": "#f8faf3",
+                "primary-fixed": "#beefbe",
+                "inverse-surface": "#0c0f0b",
+                "on-primary": "#e9ffe5",
+                "secondary-fixed": "#d4e8d0",
+                "on-secondary-container": "#455644",
+                "primary-container": "#beefbe",
+                "surface-dim": "#d5dcd0",
+                "secondary": "#526451",
+                "outline-variant": "#adb4a8",
+                "on-error": "#fff7f6",
+                "tertiary": "#5d6330",
+                "outline": "#767d72",
+                "surface-variant": "#dee5d8",
+                "on-error-container": "#6e1400",
+                "tertiary-dim": "#515725",
+                "surface-tint": "#3e6942",
+                "on-primary-fixed-variant": "#3a653f",
+                "surface-bright": "#f8faf3",
+                "surface-container-high": "#e4eadf",
+                "on-tertiary-fixed": "#4b501f",
+                "on-primary-fixed": "#1d4825",
+                "secondary-dim": "#465745",
+                "on-secondary-fixed-variant": "#4f604d",
+                "on-surface-variant": "#5a6157",
+                "error": "#a73b21",
+                "secondary-fixed-dim": "#c6dac2",
+                "background": "#f8faf3",
+                "tertiary-fixed-dim": "#eaf0af",
+                "surface-container-highest": "#dee5d8",
+                "surface-container": "#ebefe5",
+                "on-tertiary-fixed-variant": "#686e39",
+                "tertiary-fixed": "#f8ffbc",
+                "on-background": "#2d342c",
+                "error-dim": "#791903",
+                "surface-container-low": "#f1f5ec",
+                "on-tertiary": "#f8febc",
+                "on-secondary-fixed": "#334332",
+                "on-tertiary-container": "#5d632f",
+                "primary": "#3e6942",
+                "on-primary-container": "#305b36",
+                "primary-fixed-dim": "#b0e1b0",
+                "on-secondary": "#ebffe6",
+                "inverse-primary": "#c6f8c6",
+                "mint": "#00C853"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+            },
+            "spacing": {
+                "xl": "32px",
+                "md": "16px",
+                "sm": "12px",
+                "lg": "24px",
+                "gutter": "24px",
+                "margin-mobile": "16px",
+                "container-max": "1280px",
+                "base": "8px",
+                "xs": "4px",
+                "gutter-card": "12px",
+                "space-unit": "4px",
+                "stack-sm": "8px",
+                "margin-page": "20px",
+                "stack-lg": "24px",
+                "stack-md": "16px"
+            },
+            "fontFamily": {
+                "label-sm": ["Inter"],
+                "label-md": ["Inter"],
+                "headline-sm": ["Inter"],
+                "headline-lg-mobile": ["Inter"],
+                "headline-md": ["Inter"],
+                "body-md": ["Inter"],
+                "headline-lg": ["Inter"],
+                "body-lg": ["Inter"],
+                "body-sm": ["Inter"],
+                "h2": ["Inter"],
+                "h1": ["Inter"]
+            },
+            "fontSize": {
+                "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "h2": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "h1": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "caption": ["13px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body {
+          min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-container/30">
+<!-- Top App Bar -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-margin-page h-16 bg-surface/80 backdrop-blur-md">
+<button class="text-mint font-body-md active:scale-95 transition-transform duration-200">
+            取消
+        </button>
+<h1 class="font-h2 text-h2 font-bold text-on-surface">添加作业</h1>
+<div class="w-12"></div> <!-- Spacer for centering -->
+</header>
+<main class="max-w-md mx-auto pb-32">
+<form class="flex flex-col space-y-stack-md pt-stack-md">
+<!-- Title Input Section -->
+<section class="px-margin-page">
+<div class="bg-surface-container-lowest rounded-xl p-stack-sm border border-outline-variant/30 shadow-sm">
+<input class="w-full bg-transparent border-none focus:ring-0 font-body-lg text-on-surface placeholder:text-outline/60 px-space-unit" placeholder="请输入作业标题" required="" type="text"/>
+</div>
+</section>
+<!-- Description Section -->
+<section class="px-margin-page">
+<div class="bg-surface-container-lowest rounded-xl p-stack-md border border-outline-variant/30 shadow-sm">
+<textarea class="w-full bg-transparent border-none focus:ring-0 font-body-md text-on-surface-variant placeholder:text-outline/60 resize-none" placeholder="详细描述（可选）" rows="4"></textarea>
+</div>
+</section>
+<!-- Image Upload Section -->
+<section class="px-margin-page space-y-stack-sm">
+<label class="font-label-sm text-on-surface-variant flex items-center gap-1 ml-1">
+<span class="material-symbols-outlined text-[16px]">image</span> 添加图片 (0/5)
+                </label>
+<div class="flex gap-stack-sm overflow-x-auto hide-scrollbar pb-2">
+<!-- Upload Button -->
+<button class="flex-shrink-0 w-24 h-24 bg-surface-container-high rounded-xl border-2 border-dashed border-mint/40 flex flex-col items-center justify-center text-mint hover:bg-mint/5 transition-colors active:scale-95" type="button">
+<span class="material-symbols-outlined">photo_camera</span>
+<span class="text-caption mt-1">添加图片</span>
+</button>
+<!-- Placeholders to show capacity -->
+<div class="flex-shrink-0 w-24 h-24 bg-surface-container-low rounded-xl border border-outline-variant/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/30">image</span>
+</div>
+<div class="flex-shrink-0 w-24 h-24 bg-surface-container-low rounded-xl border border-outline-variant/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-outline/30">image</span>
+</div>
+</div>
+</section>
+<!-- Tag Selection Section -->
+<section class="space-y-stack-sm">
+<label class="font-label-sm text-on-surface-variant flex items-center gap-1 px-margin-page ml-1">
+<span class="material-symbols-outlined text-[16px]">label</span> 选择科目
+                </label>
+<div class="flex gap-stack-sm overflow-x-auto hide-scrollbar px-margin-page pb-1">
+<button class="flex-shrink-0 px-4 py-2 bg-mint/10 text-mint rounded-full font-body-md border border-mint/20 whitespace-nowrap" type="button">数学</button>
+<button class="flex-shrink-0 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-body-md border border-outline-variant/20 whitespace-nowrap" type="button">英语</button>
+<button class="flex-shrink-0 px-4 py-2 bg-surface-container-high text-on-surface-variant rounded-full font-body-md border border-outline-variant/20 whitespace-nowrap" type="button">语文</button>
+<button class="flex-shrink-0 px-4 py-2 bg-surface-container-highest text-on-surface-variant rounded-full font-body-md border border-outline-variant/30 whitespace-nowrap flex items-center gap-1" type="button">
+                        自定义 <span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</section>
+<!-- Task Duration Section (Completion Windows) -->
+<section class="px-margin-page space-y-stack-sm">
+<label class="font-label-sm text-on-surface-variant flex items-center gap-1 ml-1">
+<span class="material-symbols-outlined text-[16px]">date_range</span> 任务完成窗口期
+                </label>
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+<!-- Start Date -->
+<div class="flex items-center justify-between p-stack-md active:bg-surface-container-low transition-colors border-b border-outline-variant/10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-mint/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-mint">play_circle</span>
+</div>
+<div>
+<p class="text-caption text-on-surface-variant">开始日期</p>
+<p class="text-body-md font-semibold text-on-surface">2023年10月24日</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+<!-- End Date -->
+<div class="flex items-center justify-between p-stack-md active:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-error">stop_circle</span>
+</div>
+<div>
+<p class="text-caption text-on-surface-variant">截止日期</p>
+<p class="text-body-md font-semibold text-on-surface">2023年10月31日</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+<div class="flex items-start gap-2 px-1 py-1">
+<span class="material-symbols-outlined text-mint text-[18px]">info</span>
+<p class="text-caption text-on-surface-variant/80 italic">此任务可在上述时间范围内的任意时间完成。</p>
+</div>
+</section>
+<!-- Repeat Rule -->
+<section class="px-margin-page">
+<div class="flex items-center justify-between p-stack-md bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm active:scale-[0.98] transition-transform">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">event_repeat</span>
+</div>
+<div>
+<p class="text-body-md font-semibold text-on-surface">重复规则</p>
+<p class="text-caption text-on-surface-variant">无重复</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</section>
+<!-- Aesthetic Mint Card -->
+<section class="px-margin-page pt-stack-sm">
+<div class="relative overflow-hidden rounded-2xl p-stack-md bg-primary-container text-on-primary-container shadow-sm border border-outline-variant/20">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-[80px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<p class="text-label-sm uppercase tracking-wider opacity-70">学习提示</p>
+<p class="text-body-lg font-bold mt-1 leading-snug">保持专注，分步完成。<br/>每一小步都是进步。</p>
+</div>
+</section>
+</form>
+</main>
+<!-- Bottom Action Button -->
+<footer class="fixed bottom-0 left-0 w-full p-margin-page bg-surface/90 backdrop-blur-md z-50 border-t border-outline-variant/10">
+<div class="max-w-md mx-auto">
+<button class="w-full h-14 bg-primary-container text-on-primary-container rounded-xl font-body-lg font-bold shadow-sm active:scale-95 transition-transform">
+                保存
+            </button>
+</div>
+</footer>
+</body></html>

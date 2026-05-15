@@ -1,0 +1,197 @@
+<template>
+  <view class="card">
+    <picker mode="date" :value="startIso" @change="onStartPickChange">
+      <view class="drow drow--border">
+        <view class="drow__left">
+          <view class="ico ico--mint">
+            <uni-icons type="smallcircle-filled" size="48rpx" color="#00c853" />
+          </view>
+          <view class="drow__meta">
+            <text class="drow__cap">开始日期</text>
+            <text class="drow__val">{{ startLabel }}</text>
+          </view>
+        </view>
+        <uni-icons type="right" size="48rpx" color="#767d72" class="chev" />
+      </view>
+    </picker>
+
+    <picker v-if="!endNever" mode="date" :value="endIso" @change="onEndPickChange">
+      <view class="drow drow--border">
+        <view class="drow__left">
+          <view class="ico ico--err">
+            <uni-icons type="smallcircle-filled" size="48rpx" color="#a73b21" />
+          </view>
+          <view class="drow__meta">
+            <text class="drow__cap">结束日期</text>
+            <text class="drow__val">{{ endLabel }}</text>
+          </view>
+        </view>
+        <uni-icons type="right" size="48rpx" color="#767d72" class="chev" />
+      </view>
+    </picker>
+    <view v-else class="drow drow--border" @click="onEndNeverRowTap">
+      <view class="drow__left">
+        <view class="ico ico--err">
+          <uni-icons type="smallcircle-filled" size="48rpx" color="#a73b21" />
+        </view>
+        <view class="drow__meta">
+          <text class="drow__cap">结束日期</text>
+          <text class="drow__val">{{ endLabel }}</text>
+        </view>
+      </view>
+      <uni-icons type="right" size="48rpx" color="#767d72" class="chev" />
+    </view>
+
+    <view v-if="!endNever" class="never-row" @click.stop="setNever">
+      <text class="never-row__txt">设为永不结束</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  import { computed } from 'vue'
+  import {
+    dayKeyFromIsoDateString,
+    dayKeyToChineseLabel,
+    isoDateStringFromChineseLabel,
+  } from '../../../../shared/homeworkDateUtils.uts'
+
+  const props = defineProps({
+    startLabel: { type: String, required: true },
+    endLabel: { type: String, required: true },
+    endNever: { type: Boolean, default: true },
+  })
+
+  const emit = defineEmits(['startChange', 'endChange', 'endNeverChange'])
+
+  const startIso = computed(() => isoDateStringFromChineseLabel(props.startLabel))
+  const endIso = computed(() => isoDateStringFromChineseLabel(props.endLabel))
+
+  const onStartPickChange = (e) => {
+    const d = e.detail
+    if (d == null) {
+      return
+    }
+    const v = d.value as string
+    emit('startChange', dayKeyToChineseLabel(dayKeyFromIsoDateString(v)))
+  }
+
+  const onEndPickChange = (e) => {
+    const d = e.detail
+    if (d == null) {
+      return
+    }
+    const v = d.value as string
+    emit('endChange', dayKeyToChineseLabel(dayKeyFromIsoDateString(v)))
+  }
+
+  const onEndNeverRowTap = () => {
+    uni.showActionSheet({
+      itemList: ['指定结束日期'],
+      success: (res) => {
+        if (res.tapIndex >= 0) {
+          emit('endNeverChange', false)
+          emit('endChange', props.startLabel)
+        }
+      },
+    })
+  }
+
+  const setNever = () => {
+    emit('endNeverChange', true)
+    emit('endChange', '永不结束')
+  }
+</script>
+
+<style scoped>
+  .card {
+    width: 100%;
+    background-color: #ffffff;
+    border-radius: 24rpx;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #adb4a8;
+    overflow: hidden;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  /* 与 AddHomeworkFormBody「任务完成窗口期」内日期行一致 */
+  .drow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32rpx;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .drow--border {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: rgba(173, 180, 168, 0.1);
+  }
+
+  .drow__left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 16rpx;
+    margin-right: 24rpx;
+    flex-shrink: 0;
+  }
+
+  .ico--mint {
+    background-color: rgba(0, 200, 83, 0.1);
+  }
+
+  .ico--err {
+    background-color: rgba(167, 59, 33, 0.1);
+  }
+
+  .drow__meta {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drow__cap {
+    font-size: 26rpx;
+    line-height: 36rpx;
+    color: #5a6157;
+  }
+
+  .drow__val {
+    font-size: 32rpx;
+    font-weight: 600;
+    line-height: 48rpx;
+    color: #2d342c;
+  }
+
+  .chev {
+    flex-shrink: 0;
+    color: #767d72;
+  }
+
+  .never-row {
+    padding: 24rpx 32rpx 28rpx;
+  }
+
+  .never-row__txt {
+    font-size: 28rpx;
+    font-weight: 500;
+    color: #00c853;
+  }
+
+  /* picker 占满卡片宽度，便于点击整行 */
+  .card picker {
+    width: 100%;
+  }
+</style>

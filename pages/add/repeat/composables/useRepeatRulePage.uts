@@ -1,0 +1,250 @@
+import {
+  REPEAT_STORAGE_KEY,
+  REPEAT_META_STORAGE_KEY,
+  repeatLabelForType,
+  repeatTypeFromId,
+  normalizeRepeatId,
+  defaultMonthDayMask,
+  monthlyRepeatLabelFromMask,
+  weeklyRepeatLabelFromMask,
+} from './repeatRuleConstants.uts'
+import {
+  chineseDateLabelFromDate,
+  stripTime,
+  parseChineseDateLabel,
+} from '../../../../shared/homeworkDateUtils.uts'
+
+export function useRepeatRulePage() {
+  const statusBarHeight = ref(20)
+  /** none | daily | customWeek | monthly */
+  const selectedType = ref('none')
+  /** 7 位 0/1 字符串，周一到周日；未选自定义周时的占位（仅周一），避免默认成「工作日」 */
+  const weekMask = ref('1000000')
+  /** 31 位 0/1，下标 0 = 每月 1 号 */
+  const monthDayMask = ref(defaultMonthDayMask())
+  const startDateLabel = ref(chineseDateLabelFromDate(stripTime(new Date())))
+  const endDateLabel = ref('永不结束')
+  /** true：无结束日；false：结束日为 endDateLabel 的中文日期 */
+  const endNever = ref(true)
+
+  const countMonthOnes = (mask : string) : number => {
+    let c = 0
+    const n = mask != null ? mask.length : 0
+    for (let i = 0; i < n; i++) {
+      if (mask.charAt(i) == '1') {
+        c = c + 1
+      }
+    }
+    return c
+  }
+
+  const countWeekOnes = (mask : string) : number => {
+    let c = 0
+    const n = mask != null ? mask.length : 0
+    const lim = n < 7 ? n : 7
+    for (let i = 0; i < lim; i++) {
+      if (mask.charAt(i) == '1') {
+        c = c + 1
+      }
+    }
+    return c
+  }
+
+  const initRepeatPage = (opts : UTSJSONObject | null) => {
+    const info = uni.getSystemInfoSync()
+    const h = info.statusBarHeight
+    statusBarHeight.value = h != null ? h : 20
+
+    let raw : string | null = 'none'
+    if (opts != null) {
+      const rid = opts['repeatId']
+      if (rid != null) {
+        raw = rid as string
+      }
+    }
+    const id = normalizeRepeatId(raw)
+    selectedType.value = repeatTypeFromId(id)
+    monthDayMask.value = defaultMonthDayMask()
+    weekMask.value = '1000000'
+    if (id == 'weekdays') {
+      weekMask.value = '1111100'
+    } else if (id == 'weekly') {
+      weekMask.value = '1111111'
+    }
+    if (opts != null && id == 'monthly') {
+      const qm = opts['monthMask']
+      if (qm != null) {
+        const qs = qm as string
+        if (qs.length == 31) {
+          monthDayMask.value = qs
+        }
+      }
+    }
+    if (opts != null && id == 'customWeek') {
+      const qw = opts['weekMask']
+      if (qw != null) {
+        const ws = qw as string
+        if (ws.length == 7) {
+          weekMask.value = ws
+        }
+      }
+    }
+    // 尝试从跳转参数中恢复旧的有效期；编辑模式下由调用方传入，新增时不传则用默认值
+    let restoredStart = ''
+    let restoredEndNever = true
+    let restoredEnd = ''
+    if (id != 'none' && opts != null) {
+      const vs = opts['validStart']
+      if (vs != null) {
+        restoredStart = decodeURIComponent(vs as string)
+      }
+      const ven = opts['validEndNever']
+      if (ven != null) {
+        restoredEndNever = (ven as string) != '0'
+      }
+      if (!restoredEndNever) {
+        const ve = opts['validEnd']
+        if (ve != null) {
+          restoredEnd = decodeURIComponent(ve as string)
+        }
+      }
+    }
+    startDateLabel.value = restoredStart.length > 0
+      ? restoredStart
+      : chineseDateLabelFromDate(stripTime(new Date()))
+    endNever.value = restoredEndNever
+    endDateLabel.value = (!restoredEndNever && restoredEnd.length > 0)
+      ? restoredEnd
+      : '永不结束'
+  }
+
+  const goBack = () => {
+    uni.navigateBack({})
+  }
+
+  const pickType = (t : string) => {
+    selectedType.value = t
+    if (t == 'monthly' && countMonthOnes(monthDayMask.value) == 0) {
+      monthDayMask.value = defaultMonthDayMask()
+    }
+    if (t == 'customWeek' && countWeekOnes(weekMask.value) == 0) {
+      weekMask.value = '1000000'
+    }
+  }
+
+  const toggleWeekday = (idx : number) => {
+    const s = weekMask.value
+    if (idx < 0 || idx >= s.length) {
+      return
+    }
+    const cur = s.charAt(idx)
+    if (cur == '1' && countWeekOnes(s) <= 1) {
+      uni.showToast({ title: '至少选择一周中的一天', icon: 'none' })
+      return
+    }
+    const nextChar = cur == '1' ? '0' : '1'
+    let next = ''
+    for (let i = 0; i < s.length; i++) {
+      if (i == idx) {
+        next = next + nextChar
+      } else {
+        next = next + s.charAt(i)
+      }
+    }
+    weekMask.value = next
+  }
+
+  const toggleMonthDay = (idx : number) => {
+    const s = monthDayMask.value
+    if (idx < 0 || idx >= s.length) {
+      return
+    }
+    const cur = s.charAt(idx)
+    if (cur == '1' && countMonthOnes(s) <= 1) {
+      uni.showToast({ title: '至少选择一天', icon: 'none' })
+      return
+    }
+    const nextChar = cur == '1' ? '0' : '1'
+    let next = ''
+    for (let i = 0; i < s.length; i++) {
+      if (i == idx) {
+        next = next + nextChar
+      } else {
+        next = next + s.charAt(i)
+      }
+    }
+    monthDayMask.value = next
+  }
+
+  const onRepeatStartChange = (label : string) => {
+    startDateLabel.value = label
+    if (!endNever.value) {
+      const sk = parseChineseDateLabel(label)
+      const ek = parseChineseDateLabel(endDateLabel.value)
+      if (sk >= 0 && ek >= 0 && ek < sk) {
+        endDateLabel.value = label
+      }
+    }
+  }
+
+  const onRepeatEndChange = (label : string) => {
+    endDateLabel.value = label
+  }
+
+  const onRepeatEndNeverChange = (never : boolean) => {
+    endNever.value = never
+  }
+
+  const confirmRepeat = () => {
+    if (selectedType.value == 'monthly' && countMonthOnes(monthDayMask.value) == 0) {
+      uni.showToast({ title: '请选择每月重复的日期', icon: 'none' })
+      return
+    }
+    if (selectedType.value == 'customWeek' && countWeekOnes(weekMask.value) == 0) {
+      uni.showToast({ title: '请选择重复的星期', icon: 'none' })
+      return
+    }
+    let label = repeatLabelForType(selectedType.value)
+    if (selectedType.value == 'monthly') {
+      label = monthlyRepeatLabelFromMask(monthDayMask.value)
+    } else if (selectedType.value == 'customWeek') {
+      label = weeklyRepeatLabelFromMask(weekMask.value)
+    }
+    uni.setStorageSync(REPEAT_STORAGE_KEY, label)
+    const meta =
+      '{"selectedType":"' +
+      selectedType.value +
+      '","weekMask":"' +
+      weekMask.value +
+      '","monthDayMask":"' +
+      monthDayMask.value +
+      '","startDateLabel":"' +
+      startDateLabel.value +
+      '","endDateLabel":"' +
+      endDateLabel.value +
+      '","endNever":' +
+      (endNever.value ? 'true' : 'false') +
+      '}'
+    uni.setStorageSync(REPEAT_META_STORAGE_KEY, meta)
+    uni.navigateBack({})
+  }
+
+  return {
+    statusBarHeight,
+    selectedType,
+    weekMask,
+    monthDayMask,
+    startDateLabel,
+    endDateLabel,
+    endNever,
+    initRepeatPage,
+    goBack,
+    pickType,
+    toggleWeekday,
+    toggleMonthDay,
+    onRepeatStartChange,
+    onRepeatEndChange,
+    onRepeatEndNeverChange,
+    confirmRepeat,
+  }
+}

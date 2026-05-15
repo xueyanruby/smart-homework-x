@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#4f604d",
+                    "surface-tint": "#3e6942",
+                    "on-surface": "#2d342c",
+                    "surface-container-low": "#f1f5ec",
+                    "primary-fixed-dim": "#b0e1b0",
+                    "secondary-dim": "#465745",
+                    "on-primary-fixed": "#1d4825",
+                    "surface-container": "#ebefe5",
+                    "surface-variant": "#dee5d8",
+                    "outline": "#767d72",
+                    "tertiary-dim": "#515725",
+                    "on-error-container": "#6e1400",
+                    "surface-dim": "#d5dcd0",
+                    "on-tertiary-fixed": "#4b501f",
+                    "tertiary-container": "#f8ffbc",
+                    "inverse-surface": "#0c0f0b",
+                    "surface": "#f8faf3",
+                    "secondary-fixed-dim": "#c6dac2",
+                    "background": "#f8faf3",
+                    "surface-bright": "#f8faf3",
+                    "surface-container-high": "#e4eadf",
+                    "secondary-container": "#d4e8d0",
+                    "on-primary-fixed-variant": "#3a653f",
+                    "on-background": "#2d342c",
+                    "surface-container-highest": "#dee5d8",
+                    "error-dim": "#791903",
+                    "tertiary": "#5d6330",
+                    "secondary": "#526451",
+                    "primary-fixed": "#beefbe",
+                    "on-tertiary-container": "#5d632f",
+                    "error": "#a73b21",
+                    "on-tertiary-fixed-variant": "#686e39",
+                    "on-secondary": "#ebffe6",
+                    "on-secondary-container": "#455644",
+                    "on-primary": "#e9ffe5",
+                    "tertiary-fixed": "#f8ffbc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#334332",
+                    "on-primary-container": "#305b36",
+                    "primary": "#3e6942",
+                    "primary-dim": "#325c37",
+                    "inverse-primary": "#c6f8c6",
+                    "on-surface-variant": "#5a6157",
+                    "inverse-on-surface": "#9b9e97",
+                    "tertiary-fixed-dim": "#eaf0af",
+                    "outline-variant": "#adb4a8",
+                    "on-error": "#fff7f6",
+                    "primary-container": "#beefbe",
+                    "secondary-fixed": "#d4e8d0",
+                    "error-container": "#fd795a",
+                    "on-tertiary": "#f8febc"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-card": "12px",
+                    "space-unit": "4px",
+                    "stack-sm": "8px",
+                    "margin-page": "20px",
+                    "stack-lg": "24px",
+                    "stack-md": "16px",
+                    "margin-mobile": "16px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "xs": "4px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "caption": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "h2": ["Inter"],
+                    "h1": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "caption": ["13px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "h2": ["20px", {"lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "h1": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["17px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "body-md": ["15px", {"lineHeight": "22px", "letterSpacing": "0", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #f8faf3;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ambient-glow {
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<!-- TopAppBar Shell -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-margin-page h-16 bg-surface shadow-sm">
+<div class="flex items-center gap-4">
+<button class="active:scale-[0.98] transition-all duration-200 ease-in-out hover:bg-surface-container-high p-2 rounded-full">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<h1 class="text-h2 font-bold text-on-surface">作业备忘录</h1>
+</div>
+</header>
+<main class="pb-16">
+<!-- Filter Tabs -->
+<div class="px-margin-page pt-stack-md flex gap-stack-sm overflow-x-auto no-scrollbar">
+<button class="px-6 py-2 rounded-full bg-primary-container text-on-primary-container font-body-md shadow-sm active:scale-95 transition-transform shrink-0">全部</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-body-md hover:bg-surface-container-high active:scale-95 transition-transform shrink-0">未完成</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-body-md hover:bg-surface-container-high active:scale-95 transition-transform shrink-0">已完成</button>
+</div>
+<!-- Horizontal Date Picker -->
+<div class="px-margin-page py-stack-md">
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="text-caption font-medium">周一</span>
+<span class="text-h2 font-bold mt-1">21</span>
+</div>
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="text-caption font-medium">周二</span>
+<span class="text-h2 font-bold mt-1">22</span>
+</div>
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="text-caption font-medium">周三</span>
+<span class="text-h2 font-bold mt-1">23</span>
+</div>
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-primary-container text-on-primary-container shadow-md active:scale-95 transition-all relative">
+<span class="text-caption font-medium">今天</span>
+<span class="text-h2 font-bold mt-1">24</span>
+<div class="absolute -bottom-1 w-1.5 h-1.5 bg-on-primary-container rounded-full"></div>
+</div>
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="text-caption font-medium">周五</span>
+<span class="text-h2 font-bold mt-1">25</span>
+</div>
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="text-caption font-medium">周六</span>
+<span class="text-h2 font-bold mt-1">26</span>
+</div>
+<div class="flex flex-col items-center min-w-[56px] py-3 rounded-2xl bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="text-caption font-medium">周日</span>
+<span class="text-h2 font-bold mt-1">27</span>
+</div>
+</div>
+</div>
+<!-- Homework List (Selected Date: Oct 24) -->
+<div class="px-margin-page space-y-stack-lg">
+<section class="space-y-stack-md">
+<div class="flex justify-between items-center px-1">
+<h3 class="text-on-surface font-h2">10月24日 · 周四</h3>
+<span class="text-caption text-on-surface-variant">2 个任务</span>
+</div>
+<!-- Task Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 ambient-glow flex items-center justify-between active:scale-[0.99] transition-all">
+<div class="flex items-start gap-4">
+<div class="space-y-1">
+<h4 class="font-body-lg text-on-surface">数学周报 P42</h4>
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-primary-container/20 text-primary">数学</span>
+<div class="flex items-center gap-1 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">event</span>
+<span>10月24日 - 10月25日</span>
+</div>
+</div>
+</div>
+</div>
+<button class="px-4 py-1.5 bg-primary text-on-primary text-label-md rounded-full shadow-sm active:scale-95 transition-transform">完成</button>
+</div>
+<!-- Task Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 ambient-glow flex items-center justify-between active:scale-[0.99] transition-all">
+<div class="flex items-start gap-4">
+<div class="space-y-1 opacity-60">
+<h4 class="font-body-lg text-on-surface line-through">英语单词默写 Unit 5</h4>
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-tertiary-container/40 text-tertiary">英语</span>
+<div class="flex items-center gap-1 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">event</span>
+<span>10月24日 - 10月27日</span>
+</div>
+</div>
+</div>
+</div>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-label-md rounded-full font-medium">已完成</span>
+</div>
+</section>
+</div>
+</main>
+<!-- FAB -->
+<button class="fixed right-margin-page w-14 h-14 bg-primary-container text-on-primary-container rounded-xl shadow-lg flex items-center justify-center active:scale-90 transition-transform z-40 bottom-8">
+<span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'wght' 600;">add</span>
+</button>
+<!-- BottomNavBar Shell -->
+</body></html>

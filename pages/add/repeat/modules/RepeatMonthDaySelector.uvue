@@ -1,0 +1,109 @@
+<template>
+  <view class="wrap">
+    <view class="wrap__inner">
+      <view
+        v-for="idx in indices"
+        :key="idx"
+        class="pill"
+        :class="onAt(idx) ? 'pill--on' : 'pill--off'"
+        @click="onTap(idx)"
+      >
+        <text class="pill__txt">{{ dayText(idx) }}</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  const props = defineProps({
+    /** 长度 31：下标 0 = 每月 1 号，1=选中 */
+    mask: { type: String, required: true },
+  })
+
+  const emit = defineEmits(['toggle'])
+
+  const indices : number[] = []
+  for (let i = 0; i < 31; i++) {
+    indices.push(i)
+  }
+
+  const dayText = (idx : number) : string => {
+    return (idx + 1).toString()
+  }
+
+  const onTap = (idx : number) => {
+    emit('toggle', idx)
+  }
+
+  const onAt = (idx : number) : boolean => {
+    if (idx < 0 || idx >= props.mask.length) {
+      return false
+    }
+    return props.mask.charAt(idx) == '1'
+  }
+</script>
+
+<style scoped>
+  /* 外层：卡片全宽；内层网格整体水平居中 */
+  .wrap {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    padding-top: 20rpx;
+    padding-bottom: 20rpx;
+    padding-left: 20rpx;
+    padding-right: 20rpx;
+    box-sizing: border-box;
+    background-color: #ffffff;
+    border-radius: 24rpx;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #adb4a8;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  /* 固定 7 列宽：最后一行不足 7 个时在块内靠左 */
+  .wrap__inner {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-content: flex-start;
+    width: 592rpx;
+    gap: 10rpx;
+  }
+
+  .pill {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 76rpx;
+    height: 72rpx;
+    border-radius: 16rpx;
+  }
+
+  .pill--on {
+    background-color: #00c853;
+  }
+
+  .pill--off {
+    background-color: #dee5d8;
+  }
+
+  .pill__txt {
+    font-size: 26rpx;
+    font-weight: 700;
+    line-height: 36rpx;
+  }
+
+  .pill--on .pill__txt {
+    color: #ffffff;
+  }
+
+  .pill--off .pill__txt {
+    color: #5a6157;
+  }
+</style>

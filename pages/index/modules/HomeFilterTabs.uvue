@@ -1,0 +1,101 @@
+<template>
+  <!-- 横向 scroll-view 在小程序内需固定高度，否则会纵向撑满父级 flex 列导致 Tab 条异常变高 -->
+  <scroll-view
+    class="h-scroll"
+    scroll-x="true"
+    show-scrollbar="false"
+    enable-flex="true"
+  >
+    <view class="filter-row">
+      <view
+        v-for="(t, i) in tabs"
+        :key="i"
+        class="filter-chip"
+        :class="activeIndex == i ? 'filter-chip--active' : ''"
+        @click="onPick(i)"
+      >
+        <text
+          class="filter-chip__text"
+          :class="activeIndex == i ? 'filter-chip__text--active' : 'filter-chip__text--idle'"
+        >
+          {{ t }}
+        </text>
+      </view>
+    </view>
+  </scroll-view>
+</template>
+
+<script setup>
+  defineProps({
+    tabs: { type: Array, default: () => [] },
+    activeIndex: { type: Number, default: 0 },
+  })
+
+  const emit = defineEmits(['pick'])
+
+  const onPick = (index: number) => {
+    emit('pick', index)
+  }
+</script>
+
+<style scoped>
+  .h-scroll {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    width: 750rpx;
+    /* 与 filter-row 上下 padding + chip 内边距 + 一行文案行高对齐，避免各端自动算高不一致 */
+    height: 120rpx;
+    box-sizing: border-box;
+  }
+
+  .filter-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    height: 100%;
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    padding-top: 24rpx;
+    padding-bottom: 16rpx;
+    box-sizing: border-box;
+  }
+
+  .filter-chip {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 16rpx;
+    padding-left: 48rpx;
+    padding-right: 48rpx;
+    padding-top: 12rpx;
+    padding-bottom: 12rpx;
+    border-radius: 9999px;
+    background-color: #f1f5ec;
+    border-width: 0;
+    box-sizing: border-box;
+  }
+
+  .filter-chip--active {
+    background-color: #beefbe;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .filter-chip__text {
+    font-size: 30rpx;
+    line-height: 44rpx;
+    color: #5a6157;
+  }
+
+  .filter-chip__text--active {
+    color: #305b36;
+    font-weight: 500;
+  }
+
+  .filter-chip__text--idle {
+    font-weight: 400;
+  }
+</style>

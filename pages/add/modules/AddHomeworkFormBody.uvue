@@ -1,0 +1,706 @@
+<template>
+  <view class="form-root">
+
+    <!-- Title -->
+    <view class="px">
+      <view class="wcard wcard--sm">
+        <textarea
+          class="title-input"
+          :value="form.title"
+          placeholder="请输入作业标题"
+          @input="onTitleInput"
+        ></textarea>
+      </view>
+    </view>
+
+    <!-- Description -->
+    <view class="px gap-top">
+      <view class="wcard wcard--md">
+        <textarea
+          class="desc-input"
+          :value="form.description"
+          placeholder="详细描述（可选）"
+          @input="onDescInput"
+        ></textarea>
+      </view>
+    </view>
+
+    <!-- Image upload -->
+    <view class="px gap-top">
+      <view class="sec-row">
+        <uni-icons type="image" size="32rpx" color="#5a6157" class="sec-ico" />
+        <text class="sec-lbl">添加图片 ({{ form.imagePaths.length }}/5)</text>
+      </view>
+      <scroll-view
+        class="hscroll hscroll--thumbs"
+        scroll-x="true"
+        show-scrollbar="false"
+        enable-flex="true"
+      >
+        <view class="thumb-row">
+          <view class="upload-btn" @click="onTapImage">
+            <uni-icons type="camera-filled" size="56rpx" color="#00c853" class="upload-btn__ic" />
+            <text class="upload-btn__lbl">添加图片</text>
+          </view>
+          <view
+            v-for="(imgPath, imgIdx) in form.imagePaths"
+            :key="imgIdx"
+            class="thumb-wrap"
+          >
+            <image class="thumb-img" :src="imgPath" mode="aspectFill"></image>
+            <view class="thumb-remove" @click.stop="onRemoveImage(imgIdx)">
+              <text class="thumb-remove__t">×</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Subject chips -->
+    <view class="gap-top">
+      <view class="px sec-row">
+        <uni-icons type="flag" size="32rpx" color="#5a6157" class="sec-ico" />
+        <text class="sec-lbl">选择科目</text>
+      </view>
+      <scroll-view
+        class="hscroll hscroll--chips"
+        scroll-x="true"
+        show-scrollbar="false"
+        enable-flex="true"
+      >
+        <view class="px chip-row">
+          <view
+            class="chip"
+            :class="form.subject == 'math' ? 'chip--on' : 'chip--off'"
+            @click="onPickMath"
+          >
+            <text
+              class="chip__t"
+              :class="form.subject == 'math' ? 'chip__t--on' : 'chip__t--off'"
+            >数学</text>
+          </view>
+          <view
+            class="chip"
+            :class="form.subject == 'en' ? 'chip--on' : 'chip--off'"
+            @click="onPickEn"
+          >
+            <text
+              class="chip__t"
+              :class="form.subject == 'en' ? 'chip__t--on' : 'chip__t--off'"
+            >英语</text>
+          </view>
+          <view
+            class="chip"
+            :class="form.subject == 'zh' ? 'chip--on' : 'chip--off'"
+            @click="onPickZh"
+          >
+            <text
+              class="chip__t"
+              :class="form.subject == 'zh' ? 'chip__t--on' : 'chip__t--off'"
+            >语文</text>
+          </view>
+          <view
+            class="chip chip--custom"
+            :class="form.subject == 'custom' ? 'chip--on' : 'chip--off'"
+            @click="onPickCustom"
+          >
+            <text
+              class="chip__t"
+              :class="form.subject == 'custom' ? 'chip__t--on' : 'chip__t--off'"
+            >自定义</text>
+            <uni-icons type="plusempty" size="32rpx" color="#5a6157" class="chip__add" />
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Custom subject -->
+    <view v-if="form.subject == 'custom'" class="px gap-top">
+      <view class="wcard wcard--sm">
+        <input
+          class="custom-input"
+          type="text"
+          :value="form.customSubjectName"
+          placeholder="请输入自定义科目"
+          @input="onCustomInput"
+        />
+      </view>
+    </view>
+
+    <!-- Repeat rule（与任务完成窗口期互斥：有重复时不展示窗口期） -->
+    <view class="px gap-top">
+      <view class="rep-card" @click="onTapRepeatCard">
+        <view class="rep-card__l">
+          <view class="ico ico--sec">
+            <uni-icons type="loop" size="48rpx" color="#526451" />
+          </view>
+          <view class="drow__meta">
+            <text class="rep-title">重复规则</text>
+            <text class="rep-sub">{{ form.repeatLabel }}</text>
+          </view>
+        </view>
+        <uni-icons type="right" size="48rpx" color="#767d72" class="chev" />
+      </view>
+      <view v-if="!showCompletionWindow" class="rep-window-hint">
+        <text class="rep-window-hint__txt">设为「不重复」后，可设置任务完成窗口期</text>
+      </view>
+    </view>
+
+    <!-- Date range：仅不重复时展示 -->
+    <view v-if="showCompletionWindow" class="px gap-top">
+      <view class="sec-row">
+        <uni-icons type="calendar" size="32rpx" color="#5a6157" class="sec-ico" />
+        <text class="sec-lbl">任务完成窗口期</text>
+      </view>
+      <view class="wcard wcard--flat">
+        <picker mode="date" :value="startIso" @change="onStartPickerChange">
+          <view class="drow drow--border">
+            <view class="drow__left">
+              <view class="ico ico--mint">
+                <uni-icons type="smallcircle-filled" size="48rpx" color="#00c853" />
+              </view>
+              <view class="drow__meta">
+                <text class="drow__cap">开始日期</text>
+                <text class="drow__val">{{ form.startDateLabel }}</text>
+              </view>
+            </view>
+            <uni-icons type="right" size="48rpx" color="#767d72" class="chev" />
+          </view>
+        </picker>
+        <picker mode="date" :value="endIso" @change="onEndPickerChange">
+          <view class="drow">
+            <view class="drow__left">
+              <view class="ico ico--err">
+                <uni-icons type="smallcircle-filled" size="48rpx" color="#a73b21" />
+              </view>
+              <view class="drow__meta">
+                <text class="drow__cap">截止日期</text>
+                <text class="drow__val">{{ form.endDateLabel }}</text>
+              </view>
+            </view>
+            <uni-icons type="right" size="48rpx" color="#767d72" class="chev" />
+          </view>
+        </picker>
+      </view>
+      <view class="hint-row">
+        <uni-icons type="info" size="36rpx" color="#00c853" class="hint-ico" />
+        <text class="hint-txt">此任务可在上述时间范围内的任意时间完成。</text>
+      </view>
+    </view>
+
+    <!-- Tip card -->
+    <view class="px gap-top gap-bottom">
+      <view class="tip-card">
+        <text class="tip-lbl">学习提示</text>
+        <text class="tip-body">保持专注，分步完成。</text>
+        <text class="tip-body">每一小步都是进步。</text>
+      </view>
+    </view>
+
+  </view>
+</template>
+
+<script setup>
+  import { computed } from 'vue'
+  import {
+    dayKeyFromIsoDateString,
+    dayKeyToChineseLabel,
+    isoDateStringFromChineseLabel,
+  } from '../../../shared/homeworkDateUtils.uts'
+
+  const props = defineProps({
+    form: { type: Object, required: true },
+  })
+
+  const emit = defineEmits([
+    'updatetitle',
+    'updatedesc',
+    'updatesubject',
+    'openimage',
+    'updatestartdate',
+    'updateenddate',
+    'updatecustomsubject',
+    'removeimage',
+    'openrepeat',
+  ])
+
+  const startIso = computed(() => {
+    return isoDateStringFromChineseLabel(props.form.startDateLabel as string)
+  })
+
+  const endIso = computed(() => {
+    return isoDateStringFromChineseLabel(props.form.endDateLabel as string)
+  })
+
+  const showCompletionWindow = computed(() => {
+    const r = props.form.repeatLabel != null ? (props.form.repeatLabel as string) : '不重复'
+    return r == '不重复' || r == '无重复'
+  })
+
+  const onTitleInput = (e) => {
+    emit('updatetitle', e.detail.value)
+  }
+
+  const onDescInput = (e) => {
+    emit('updatedesc', e.detail.value)
+  }
+
+  const onTapImage = () => {
+    emit('openimage')
+  }
+
+  const onPickMath = () => {
+    emit('updatesubject', 'math')
+  }
+
+  const onPickEn = () => {
+    emit('updatesubject', 'en')
+  }
+
+  const onPickZh = () => {
+    emit('updatesubject', 'zh')
+  }
+
+  const onPickCustom = () => {
+    emit('updatesubject', 'custom')
+  }
+
+  const onCustomInput = (e) => {
+    emit('updatecustomsubject', e.detail.value)
+  }
+
+  const onStartPickerChange = (e) => {
+    const d = e.detail
+    if (d == null) {
+      return
+    }
+    const v = d.value as string
+    emit('updatestartdate', dayKeyToChineseLabel(dayKeyFromIsoDateString(v)))
+  }
+
+  const onEndPickerChange = (e) => {
+    const d = e.detail
+    if (d == null) {
+      return
+    }
+    const v = d.value as string
+    emit('updateenddate', dayKeyToChineseLabel(dayKeyFromIsoDateString(v)))
+  }
+
+  const onRemoveImage = (idx : number) => {
+    emit('removeimage', idx)
+  }
+
+  const onTapRepeatCard = () => {
+    emit('openrepeat')
+  }
+</script>
+
+<style scoped>
+  /* ── layout ── */
+  .form-root {
+    display: flex;
+    flex-direction: column;
+    padding-top: 32rpx;
+  }
+
+  .px {
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+  }
+
+  .gap-top {
+    margin-top: 32rpx;
+  }
+
+  .gap-bottom {
+    margin-bottom: 260rpx;
+  }
+
+  /* ── White card ── */
+  .wcard {
+    background-color: #ffffff;
+    border-radius: 24rpx;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(173, 180, 168, 0.3);
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .wcard--sm  { padding: 24rpx; }
+  .wcard--md  { padding: 32rpx; }
+  .wcard--flat { overflow: hidden; padding: 0; }
+
+  /* ── Inputs ── */
+  .title-input {
+    width: 100%;
+    height: 72rpx;
+    font-size: 36rpx;
+    line-height: 72rpx;
+    color: #2d342c;
+    padding-left: 8rpx;
+  }
+
+  .desc-input {
+    width: 100%;
+    min-height: 192rpx;
+    font-size: 32rpx;
+    line-height: 48rpx;
+    color: #5a6157;
+  }
+
+  /* ── Section label ── */
+  .sec-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 24rpx;
+    margin-left: 2rpx;
+  }
+
+  .sec-ico {
+    color: #5a6157;
+    margin-right: 8rpx;
+  }
+
+  .sec-lbl {
+    font-size: 24rpx;
+    font-weight: 500;
+    color: #5a6157;
+  }
+
+  /* ── Horizontal scroll ──（横向 scroll-view 在小程序须固定高度，且缩略图行与 chip 行高度不同，须分修饰类） */
+  .hscroll {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    width: 750rpx;
+    box-sizing: border-box;
+  }
+
+  .hscroll--thumbs {
+    height: 208rpx;
+  }
+
+  .hscroll--chips {
+    height: 112rpx;
+  }
+
+  /* ── Image upload ── */
+  .thumb-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    height: 100%;
+    padding-bottom: 8rpx;
+    box-sizing: border-box;
+  }
+
+  .upload-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 192rpx;
+    height: 192rpx;
+    margin-right: 24rpx;
+    flex-shrink: 0;
+    border-radius: 24rpx;
+    border-width: 2px;
+    border-style: dashed;
+    border-color: rgba(0, 200, 83, 0.4);
+    background-color: #e4eadf;
+  }
+
+  .upload-btn__ic {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .upload-btn__lbl {
+    margin-top: 4rpx;
+    font-size: 26rpx;
+    color: #00c853;
+  }
+
+  .thumb-wrap {
+    position: relative;
+    width: 192rpx;
+    height: 192rpx;
+    margin-right: 24rpx;
+    flex-shrink: 0;
+    border-radius: 24rpx;
+    overflow: hidden;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(173, 180, 168, 0.2);
+    background-color: #f1f5ec;
+  }
+
+  .thumb-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .thumb-remove {
+    position: absolute;
+    right: 8rpx;
+    top: 8rpx;
+    width: 40rpx;
+    height: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: rgba(0, 0, 0, 0.45);
+  }
+
+  .thumb-remove__t {
+    font-size: 32rpx;
+    line-height: 1;
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .custom-input {
+    width: 100%;
+    height: 72rpx;
+    font-size: 32rpx;
+    line-height: 72rpx;
+    color: #2d342c;
+    padding-left: 8rpx;
+  }
+
+  .wcard--flat picker {
+    width: 100%;
+  }
+
+  /* ── Subject chips ── */
+  .chip-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    height: 100%;
+    padding-bottom: 8rpx;
+    box-sizing: border-box;
+  }
+
+  .chip {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-right: 24rpx;
+    flex-shrink: 0;
+    padding-left: 32rpx;
+    padding-right: 32rpx;
+    padding-top: 16rpx;
+    padding-bottom: 16rpx;
+    border-radius: 9999px;
+    border-width: 1px;
+    border-style: solid;
+  }
+
+  .chip--on {
+    background-color: rgba(0, 200, 83, 0.1);
+    border-color: rgba(0, 200, 83, 0.2);
+  }
+
+  .chip--off {
+    background-color: #e4eadf;
+    border-color: rgba(173, 180, 168, 0.2);
+  }
+
+  .chip--custom { padding-right: 24rpx; }
+
+  .chip__t {
+    font-size: 32rpx;
+    line-height: 48rpx;
+    white-space: nowrap;
+  }
+
+  .chip__t--on  { color: #00c853; }
+  .chip__t--off { color: #5a6157; }
+
+  .chip__add {
+    color: #5a6157;
+    margin-left: 4rpx;
+  }
+
+  /* ── Date rows ── */
+  .drow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32rpx;
+  }
+
+  .drow--border {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: rgba(173, 180, 168, 0.1);
+  }
+
+  .drow__left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  /* ── Icon wrap ── */
+  .ico {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 16rpx;
+    margin-right: 24rpx;
+  }
+
+  .ico--mint { background-color: rgba(0, 200, 83, 0.1); }
+  .ico--err  { background-color: rgba(167, 59, 33, 0.1); }
+  .ico--sec  { background-color: #d4e8d0; }
+
+  /* ── Date meta ── */
+  .drow__meta {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drow__cap {
+    font-size: 26rpx;
+    line-height: 36rpx;
+    color: #5a6157;
+  }
+
+  .drow__val {
+    font-size: 32rpx;
+    font-weight: 600;
+    line-height: 48rpx;
+    color: #2d342c;
+  }
+
+  /* ── Chevron ── */
+  .chev { color: #767d72; }
+
+  /* ── Hint ── */
+  .hint-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin-top: 16rpx;
+    padding-left: 8rpx;
+    padding-right: 8rpx;
+    padding-top: 8rpx;
+    padding-bottom: 8rpx;
+  }
+
+  .hint-ico {
+    margin-right: 8rpx;
+    flex-shrink: 0;
+  }
+
+  .hint-txt {
+    flex: 1;
+    font-size: 26rpx;
+    line-height: 36rpx;
+    font-style: italic;
+    color: rgba(90, 97, 87, 0.8);
+  }
+
+  /* ── Repeat card ── */
+  .rep-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32rpx;
+    background-color: #ffffff;
+    border-radius: 24rpx;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(173, 180, 168, 0.3);
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .rep-card__l {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex: 1;
+    min-width: 0;
+    margin-right: 16rpx;
+  }
+
+  .rep-card .drow__meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .rep-window-hint {
+    margin-top: 12rpx;
+    padding-left: 8rpx;
+    padding-right: 8rpx;
+  }
+
+  .rep-window-hint__txt {
+    font-size: 24rpx;
+    line-height: 34rpx;
+    color: rgba(90, 97, 87, 0.85);
+  }
+
+  .rep-title {
+    font-size: 32rpx;
+    font-weight: 600;
+    line-height: 48rpx;
+    color: #2d342c;
+  }
+
+  .rep-sub {
+    margin-top: 4rpx;
+    font-size: 26rpx;
+    line-height: 36rpx;
+    color: #5a6157;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    width: 100%;
+  }
+
+  .rep-card .chev {
+    flex-shrink: 0;
+  }
+
+  /* ── Tip card ── */
+  .tip-card {
+    position: relative;
+    overflow: hidden;
+    padding: 32rpx;
+    border-radius: 32rpx;
+    background-color: #beefbe;
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(173, 180, 168, 0.2);
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .tip-lbl {
+    font-size: 24rpx;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    color: #305b36;
+    opacity: 0.7;
+  }
+
+  .tip-body {
+    margin-top: 8rpx;
+    font-size: 36rpx;
+    font-weight: 700;
+    line-height: 56rpx;
+    color: #305b36;
+  }
+</style>

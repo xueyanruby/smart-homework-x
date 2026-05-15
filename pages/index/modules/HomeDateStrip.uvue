@@ -1,0 +1,133 @@
+<template>
+  <view class="date-row">
+    <view
+      v-for="(d, i) in cells"
+      :key="i"
+      class="date-cell"
+      :class="cellClass(d)"
+      @click="onTapCell(d)"
+    >
+      <text class="date-cell__wk" :class="d.dayKey == selectedKey ? 'date-cell__wk--active' : ''">{{ d.week }}</text>
+      <text class="date-cell__num" :class="d.dayKey == selectedKey ? 'date-cell__num--active' : ''">{{ d.day }}</text>
+      <view v-if="d.dayKey == selectedKey" class="date-cell__dot"></view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  const props = defineProps({
+    cells: { type: Array, default: () => [] },
+    selectedKey: { type: Number, default: -1 },
+  })
+
+  const emit = defineEmits(['select'])
+
+  const cellClass = (d) => {
+    const active = d.dayKey == props.selectedKey
+    const today = d.isToday == true
+    let s = ''
+    if (d.dim) {
+      s = 'date-cell--dim'
+    }
+    if (today) {
+      s = s.length > 0 ? s + ' date-cell--today' : 'date-cell--today'
+    }
+    if (active) {
+      s = s.length > 0 ? s + ' date-cell--active' : 'date-cell--active'
+    }
+    return s
+  }
+
+  const onTapCell = (d) => {
+    if (d.dim) {
+      return
+    }
+    emit('select', d.dayKey)
+  }
+</script>
+
+<style scoped>
+  .date-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    padding-top: 16rpx;
+    padding-bottom: 16rpx;
+  }
+
+  .date-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 88rpx;
+    min-width: 88rpx;
+    padding-top: 24rpx;
+    padding-bottom: 24rpx;
+    border-radius: 32rpx;
+    background-color: #f1f5ec;
+    border-width: 0;
+    box-sizing: border-box;
+  }
+
+  .date-cell--dim {
+    opacity: 0.35;
+  }
+
+  /* 周列「今天」格：仅底色区分（无描边、无 box-shadow） */
+  .date-cell--today {
+    background-color: #e3f2e4;
+  }
+
+  .date-cell--active {
+    background-color: #beefbe;
+    box-shadow: 0 8rpx 12rpx rgba(0, 0, 0, 0.08), 0 4rpx 8rpx rgba(0, 0, 0, 0.06);
+  }
+
+  .date-cell--today.date-cell--active {
+    background-color: #a8d9a8;
+    box-shadow: 0 8rpx 12rpx rgba(0, 0, 0, 0.08), 0 4rpx 8rpx rgba(0, 0, 0, 0.06);
+  }
+
+  .date-cell--today:not(.date-cell--active) .date-cell__wk {
+    color: #3e6942;
+    font-weight: 600;
+  }
+
+  .date-cell--today:not(.date-cell--active) .date-cell__num {
+    color: #2d4a31;
+  }
+
+  .date-cell__wk {
+    font-size: 26rpx;
+    font-weight: 500;
+    color: #5a6157;
+  }
+
+  .date-cell__wk--active {
+    color: #305b36;
+  }
+
+  .date-cell__num {
+    margin-top: 8rpx;
+    font-size: 40rpx;
+    font-weight: 700;
+    color: #5a6157;
+  }
+
+  .date-cell__num--active {
+    color: #305b36;
+  }
+
+  .date-cell__dot {
+    position: absolute;
+    bottom: 8rpx;
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 9999px;
+    background-color: #305b36;
+  }
+</style>

@@ -1,0 +1,148 @@
+/** 重复规则：与 Stitch「重复规则 - 视觉优化版」及添加页一致 */
+
+export const REPEAT_STORAGE_KEY = 'addHomeworkRepeatResult'
+
+/** 重复规则扩展：周掩码、有效期（JSON 字符串） */
+export const REPEAT_META_STORAGE_KEY = 'addHomeworkRepeatMeta'
+
+export function repeatLabelForType(t : string) : string {
+  if (t == 'daily') {
+    return '每日重复'
+  }
+  if (t == 'customWeek') {
+    return '自定义周重复'
+  }
+  if (t == 'monthly') {
+    return '每月重复'
+  }
+  return '不重复'
+}
+
+/** 31 位：下标 0 = 每月 1 号，仅含 0/1；默认仅 1 号 */
+export function defaultMonthDayMask() : string {
+  let s = ''
+  for (let i = 0; i < 31; i++) {
+    s = s + (i == 0 ? '1' : '0')
+  }
+  return s
+}
+
+/** 根据掩码生成写入作业/展示用文案，如：每月重复（每月1、15日） */
+export function monthlyRepeatLabelFromMask(mask : string) : string {
+  const parts : string[] = []
+  const n = mask != null ? mask.length : 0
+  const lim = n < 31 ? n : 31
+  for (let i = 0; i < lim; i++) {
+    if (mask.charAt(i) == '1') {
+      parts.push((i + 1).toString())
+    }
+  }
+  if (parts.length == 0) {
+    return '每月重复'
+  }
+  if (parts.length == 1) {
+    return '每月重复（每月' + parts[0] + '日）'
+  }
+  let inner = ''
+  for (let j = 0; j < parts.length; j++) {
+    if (j > 0) {
+      inner = inner + '、'
+    }
+    inner = inner + parts[j]
+  }
+  return '每月重复（每月' + inner + '日）'
+}
+
+/** 7 位：下标 0=周一…6=周日；生成展示文案，如：自定义周重复（周二、周四） */
+export function weeklyRepeatLabelFromMask(mask : string) : string {
+  const wkLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  const parts : string[] = []
+  const n = mask != null ? mask.length : 0
+  const lim = n < 7 ? n : 7
+  for (let i = 0; i < lim; i++) {
+    if (mask.charAt(i) == '1') {
+      parts.push(wkLabels[i])
+    }
+  }
+  if (parts.length == 0) {
+    return '自定义周重复'
+  }
+  if (parts.length == 7) {
+    return '自定义周重复（每天）'
+  }
+  let inner = ''
+  for (let j = 0; j < parts.length; j++) {
+    if (j > 0) {
+      inner = inner + '、'
+    }
+    inner = inner + parts[j]
+  }
+  return '自定义周重复（' + inner + '）'
+}
+
+export function repeatTypeFromId(id : string) : string {
+  if (id == 'daily') {
+    return 'daily'
+  }
+  if (id == 'monthly') {
+    return 'monthly'
+  }
+  if (id == 'customWeek' || id == 'weekdays' || id == 'weekly') {
+    return 'customWeek'
+  }
+  return 'none'
+}
+
+export function repeatIdFromType(t : string) : string {
+  if (t == 'daily') {
+    return 'daily'
+  }
+  if (t == 'customWeek') {
+    return 'customWeek'
+  }
+  if (t == 'monthly') {
+    return 'monthly'
+  }
+  return 'none'
+}
+
+/** 写入存储 / 添加页展示用 */
+export function repeatLabelForId(id : string) : string {
+  return repeatLabelForType(repeatTypeFromId(id))
+}
+
+export function repeatIdFromLabel(label : string) : string {
+  if (label == '每日重复' || label == '每天') {
+    return 'daily'
+  }
+  if (label != null && label.indexOf('每月重复') == 0) {
+    return 'monthly'
+  }
+  if (label != null && label.indexOf('自定义周重复') == 0) {
+    return 'customWeek'
+  }
+  if (label == '每周' || label == '工作日（周一至周五）') {
+    return 'customWeek'
+  }
+  if (label == '不重复' || label == '无重复') {
+    return 'none'
+  }
+  return 'none'
+}
+
+export function normalizeRepeatId(raw : string | null) : string {
+  if (raw == null) {
+    return 'none'
+  }
+  if (
+    raw == 'none' ||
+    raw == 'daily' ||
+    raw == 'customWeek' ||
+    raw == 'weekdays' ||
+    raw == 'weekly' ||
+    raw == 'monthly'
+  ) {
+    return raw
+  }
+  return 'none'
+}

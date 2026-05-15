@@ -1,0 +1,134 @@
+/** 作业图片：App/小程序等转存到 uni.env.USER_DATA_PATH/homework_attachments；H5 无 FSM 时使用临时路径 */
+
+const ATTACH_DIR_NAME = 'homework_attachments'
+
+/** H5 等环境没有或不可用 uni.getFileSystemManager */
+function tryGetFileSystemManager() : any | null {
+  const u = uni as UTSJSONObject
+  const fn = u['getFileSystemManager']
+  if (fn == null) {
+    return null
+  }
+  if (typeof fn != 'function') {
+    return null
+  }
+  const invoke = fn as () => any
+  try {
+    const mgr = invoke()
+    return mgr != null ? mgr : null
+  } catch (e) {
+    return null
+  }
+}
+
+export function getHomeworkAttachDir() : string {
+  const root = uni.env.USER_DATA_PATH
+  if (root == null || root.length == 0) {
+    return ATTACH_DIR_NAME
+  }
+  const last = root.charAt(root.length - 1)
+  if (last == '/' || last == '\\') {
+    return root + ATTACH_DIR_NAME
+  }
+  return root + '/' + ATTACH_DIR_NAME
+}
+
+function ensureHomeworkAttachDirWithFsm(fsm : any) : string {
+  const dir = getHomeworkAttachDir()
+  try {
+    fsm.accessSync(dir)
+  } catch (e) {
+    fsm.mkdirSync(dir, true)
+  }
+  return dir
+}
+
+function extFromPath(p : string) : string {
+  const li = p.lastIndexOf('.')
+  if (li < 0 || li >= p.length - 1) {
+    return '.jpg'
+  }
+  const ext = p.substring(li)
+  if (ext.length > 8) {
+    return '.jpg'
+  }
+  return ext.toLowerCase()
+}
+
+/** 已由本模块转存的路径，不再 saveFile */
+function isManagedPersistedPath(p : string) : boolean {
+  return p.indexOf(ATTACH_DIR_NAME) >= 0
+}
+
+/**
+ * 将 chooseImage 返回的临时路径转存到用户目录；成功返回新路径列表，失败返回 null。
+ * 无文件系统（如 H5）时返回临时路径副本（仅会话内可用）。
+ * 会移动临时文件，调用前请快照路径数组。
+ */
+export function persistTempImagesToUserDir(tempPaths : string[]) : string[] | null {
+  if (tempPaths.length == 0) {
+    return []
+  }
+  const fsm = tryGetFileSystemManager()
+  if (fsm == null) {
+    const fallback : string[] = []
+    for (let i = 0; i < tempPaths.length; i++) {
+      fallback.push(tempPaths[i])
+    }
+    return fallback
+  }
+  /** 微信小程序等：无 USER_DATA_PATH 时 saveFile 目标非绝对路径，底层可能 path.join(undefined, …) 报错 */
+  const userRoot = uni.env.USER_DATA_PATH
+  if (userRoot == null || userRoot.length == 0) {
+    const fallback2 : string[] = []
+    for (let i = 0; i < tempPaths.length; i++) {
+      fallback2.push(tempPaths[i])
+    }
+    return fallback2
+  }
+  const dir = ensureHomeworkAttachDirWithFsm(fsm)
+  const ts = Date.now()
+  const out : string[] = []
+  for (let i = 0; i < tempPaths.length; i++) {
+    const temp = tempPaths[i]
+    if (temp == null || temp.length == 0) {
+      continue
+    }
+    if (isManagedPersistedPath(temp)) {
+      out.push(temp)
+      continue
+    }
+    const dest = dir + '/hw_' + ts.toString() + '_' + i.toString() + extFromPath(temp)
+    try {
+      const saved = fsm.saveFileSync(temp, dest)
+      out.push(saved)
+    } catch (e) {
+      return null
+    }
+  }
+  return out
+}
+
+/** 删除任务时移除已转存的附件（仅处理本目录路径，忽略失败）；无 FSM 时跳过 */
+export function unlinkHomeworkAttachmentFiles(paths : string[]) {
+  if (paths == null || paths.length == 0) {
+    return
+  }
+  const fsm = tryGetFileSystemManager()
+  if (fsm == null) {
+    return
+  }
+  for (let i = 0; i < paths.length; i++) {
+    const p = paths[i]
+    if (p == null || p.length == 0) {
+      continue
+    }
+    if (!isManagedPersistedPath(p)) {
+      continue
+    }
+    try {
+      fsm.unlinkSync(p)
+    } catch (e) {
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "作业备忘录",
+        "navigationStyle": "custom",
+        "backgroundColor": "#f8faf3",
+        "renderer": "skyline",
+        "componentFramework": "glass-easel"
+      }
+    },
+    {
+      "path": "pages/add/index",
+      "style": {
+        "navigationBarTitleText": "添加作业",
+        "navigationStyle": "custom",
+        "backgroundColor": "#f8faf3"
+      }
+    },
+    {
+      "path": "pages/add/repeat/index",
+      "style": {
+        "navigationBarTitleText": "重复规则",
+        "navigationStyle": "custom",
+        "backgroundColor": "#f8faf3"
+      }
+    },
+    {
+      "path": "pages/detail/index",
+      "style": {
+        "navigationBarTitleText": "详情内容",
+        "navigationStyle": "custom",
+        "backgroundColor": "#f8faf3"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "作业备忘录",
+    "navigationBarBackgroundColor": "#f8faf3",
+    "backgroundColor": "#f8faf3"
+  }
+}

@@ -1,0 +1,347 @@
+/** 本地作业存储：HomeworkTask 类型 + CRUD，存储 key = hwTaskList */
+
+import { unlinkHomeworkAttachmentFiles } from './homeworkImageStorage.uts'
+import { taskLabelHasRepeat } from './homeworkRepeatMatch.uts'
+
+export type HomeworkTask = {
+  id: string
+  title: string
+  description: string
+  subject: string
+  customSubjectName: string
+  startDateLabel: string
+  endDateLabel: string
+  repeatLabel: string
+  /** 自定义周重复时 7 位 0/1（周一至周日），否则空串 */
+  repeatWeekMask: string
+  /** 每月重复时 31 位 0/1，否则空串 */
+  repeatMonthDayMask: string
+  /** 重复规则生效：开始（中文日期），无重复时为空 */
+  repeatValidStartLabel: string
+  /** 重复规则生效：结束（中文日期）；与 repeatValidEndNever 配合 */
+  repeatValidEndLabel: string
+  /** true 表示生效至「永不结束」 */
+  repeatValidEndNever: boolean
+  /** 有重复时：已标记完成的日历日 dayKey；无重复时不用 */
+  repeatDoneDayKeys: number[]
+  done: boolean
+  createdAt: number
+  imagePaths: string[]
+}
+
+const TASK_STORAGE_KEY = 'hwTaskList'
+
+function buildTaskFromObj(o : UTSJSONObject) : HomeworkTask {
+  const fId = o['id']
+  const fTitle = o['title']
+  const fDesc = o['description']
+  const fSubject = o['subject']
+  const fCustomName = o['customSubjectName']
+  const fStart = o['startDateLabel']
+  const fEnd = o['endDateLabel']
+  const fRepeat = o['repeatLabel']
+  const fWeekMask = o['repeatWeekMask']
+  const fMonthMask = o['repeatMonthDayMask']
+  const fValidStart = o['repeatValidStartLabel']
+  const fValidEnd = o['repeatValidEndLabel']
+  const fValidEndNever = o['repeatValidEndNever']
+  const fDoneKeys = o['repeatDoneDayKeys']
+  const fDone = o['done']
+  const fCreatedAt = o['createdAt']
+  const fPaths = o['imagePaths']
+  const repeatDoneDayKeys : number[] = []
+  if (fDoneKeys != null) {
+    const rawKeys = JSON.stringify(fDoneKeys)
+    if (rawKeys != null && rawKeys.length > 0 && rawKeys != 'null') {
+      const parsedKeys = JSON.parse(rawKeys) as number[]
+      if (parsedKeys != null) {
+        for (let ki = 0; ki < parsedKeys.length; ki++) {
+          const nk = parsedKeys[ki]
+          if (nk != null) {
+            repeatDoneDayKeys.push(nk as number)
+          }
+        }
+      }
+    }
+  }
+  const imagePaths : string[] = []
+  if (fPaths != null) {
+    const raw = JSON.stringify(fPaths)
+    if (raw != null && raw.length > 0 && raw != 'null') {
+      const parsed = JSON.parse(raw) as string[]
+      if (parsed != null) {
+        for (let i = 0; i < parsed.length; i++) {
+          const p = parsed[i]
+          if (p != null) {
+            imagePaths.push(p as string)
+          }
+        }
+      }
+    }
+  }
+  return {
+    id: fId != null ? fId as string : '',
+    title: fTitle != null ? fTitle as string : '',
+    description: fDesc != null ? fDesc as string : '',
+    subject: fSubject != null ? fSubject as string : 'math',
+    customSubjectName: fCustomName != null ? fCustomName as string : '',
+    startDateLabel: fStart != null ? fStart as string : '',
+    endDateLabel: fEnd != null ? fEnd as string : '',
+    repeatLabel: fRepeat != null ? fRepeat as string : '不重复',
+    repeatWeekMask: fWeekMask != null ? fWeekMask as string : '',
+    repeatMonthDayMask: fMonthMask != null ? fMonthMask as string : '',
+    repeatValidStartLabel: fValidStart != null ? fValidStart as string : '',
+    repeatValidEndLabel: fValidEnd != null ? fValidEnd as string : '',
+    repeatValidEndNever: fValidEndNever != null ? (fValidEndNever as boolean) : true,
+    repeatDoneDayKeys: repeatDoneDayKeys,
+    done: fDone != null ? fDone as boolean : false,
+    createdAt: fCreatedAt != null ? fCreatedAt as number : 0,
+    imagePaths: imagePaths,
+  }
+}
+
+export function loadTasks() : HomeworkTask[] {
+  const raw = uni.getStorageSync(TASK_STORAGE_KEY)
+  if (raw == null) return []
+  const str = raw as string
+  if (str == null || str.length == 0 || str.charAt(0) != '[') return []
+  const parsed = JSON.parse(str) as UTSJSONObject[]
+  if (parsed == null) return []
+  const result : HomeworkTask[] = []
+  for (let i = 0; i < parsed.length; i++) {
+    result.push(buildTaskFromObj(parsed[i]))
+  }
+  return result
+}
+
+export function saveTasks(list : HomeworkTask[]) {
+  uni.setStorageSync(TASK_STORAGE_KEY, JSON.stringify(list))
+}
+
+export function createTask(form : {
+  title : string
+  description : string
+  subject : string
+  customSubjectName : string
+  startDateLabel : string
+  endDateLabel : string
+  repeatLabel : string
+  repeatWeekMask : string
+  repeatMonthDayMask : string
+  repeatValidStartLabel : string
+  repeatValidEndLabel : string
+  repeatValidEndNever : boolean
+  imagePaths : string[]
+}) {
+  const list = loadTasks()
+  const now = Date.now()
+  const pathsCopy : string[] = []
+  for (let i = 0; i < form.imagePaths.length; i++) {
+    pathsCopy.push(form.imagePaths[i])
+  }
+  const task : HomeworkTask = {
+    id: now.toString(),
+    title: form.title,
+    description: form.description,
+    subject: form.subject,
+    customSubjectName: form.customSubjectName,
+    startDateLabel: form.startDateLabel,
+    endDateLabel: form.endDateLabel,
+    repeatLabel: form.repeatLabel,
+    repeatWeekMask:
+      form.repeatWeekMask != null && form.repeatWeekMask.length > 0
+        ? form.repeatWeekMask
+        : '',
+    repeatMonthDayMask:
+      form.repeatMonthDayMask != null && form.repeatMonthDayMask.length > 0
+        ? form.repeatMonthDayMask
+        : '',
+    repeatValidStartLabel:
+      form.repeatValidStartLabel != null && form.repeatValidStartLabel.length > 0
+        ? form.repeatValidStartLabel
+        : '',
+    repeatValidEndLabel:
+      form.repeatValidEndLabel != null && form.repeatValidEndLabel.length > 0
+        ? form.repeatValidEndLabel
+        : '',
+    repeatValidEndNever:
+      form.repeatValidEndNever != null ? form.repeatValidEndNever : true,
+    repeatDoneDayKeys: [],
+    done: false,
+    createdAt: now,
+    imagePaths: pathsCopy,
+  }
+  list.push(task)
+  saveTasks(list)
+}
+
+export type TaskUpdatePayload = {
+  title : string
+  description : string
+  subject : string
+  customSubjectName : string
+  startDateLabel : string
+  endDateLabel : string
+  repeatLabel : string
+  repeatWeekMask : string
+  repeatMonthDayMask : string
+  repeatValidStartLabel : string
+  repeatValidEndLabel : string
+  repeatValidEndNever : boolean
+  imagePaths : string[]
+}
+
+export function updateTask(id : string, form : TaskUpdatePayload) : boolean {
+  const list = loadTasks()
+  let idx = -1
+  const oldPaths : string[] = []
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id == id) {
+      idx = i
+      for (let j = 0; j < list[i].imagePaths.length; j++) {
+        oldPaths.push(list[i].imagePaths[j])
+      }
+      break
+    }
+  }
+  if (idx < 0) {
+    return false
+  }
+  const pathsCopy : string[] = []
+  for (let i = 0; i < form.imagePaths.length; i++) {
+    pathsCopy.push(form.imagePaths[i])
+  }
+  const removed : string[] = []
+  for (let i = 0; i < oldPaths.length; i++) {
+    const op = oldPaths[i]
+    let found = false
+    for (let j = 0; j < pathsCopy.length; j++) {
+      if (pathsCopy[j] == op) {
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      removed.push(op)
+    }
+  }
+  list[idx].title = form.title
+  list[idx].description = form.description
+  list[idx].subject = form.subject
+  list[idx].customSubjectName = form.customSubjectName
+  list[idx].startDateLabel = form.startDateLabel
+  list[idx].endDateLabel = form.endDateLabel
+  list[idx].repeatLabel = form.repeatLabel
+  list[idx].repeatWeekMask =
+    form.repeatWeekMask != null && form.repeatWeekMask.length > 0
+      ? form.repeatWeekMask
+      : ''
+  list[idx].repeatMonthDayMask =
+    form.repeatMonthDayMask != null && form.repeatMonthDayMask.length > 0
+      ? form.repeatMonthDayMask
+      : ''
+  list[idx].repeatValidStartLabel =
+    form.repeatValidStartLabel != null && form.repeatValidStartLabel.length > 0
+      ? form.repeatValidStartLabel
+      : ''
+  list[idx].repeatValidEndLabel =
+    form.repeatValidEndLabel != null && form.repeatValidEndLabel.length > 0
+      ? form.repeatValidEndLabel
+      : ''
+  list[idx].repeatValidEndNever =
+    form.repeatValidEndNever != null ? form.repeatValidEndNever : true
+  list[idx].imagePaths = pathsCopy
+  saveTasks(list)
+  unlinkHomeworkAttachmentFiles(removed)
+  return true
+}
+
+function repeatDoneDayKeysContains(arr : number[], dayKey : number) : boolean {
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] == dayKey) {
+      return true
+    }
+  }
+  return false
+}
+
+/** 无重复：看 done；有重复：仅看 repeatDoneDayKeys 是否含该日 */
+export function taskIsDoneOnDayKey(task : HomeworkTask, dayKey : number) : boolean {
+  if (!taskLabelHasRepeat(task.repeatLabel)) {
+    return task.done
+  }
+  return repeatDoneDayKeysContains(task.repeatDoneDayKeys, dayKey)
+}
+
+export function markDone(id : string, dayKey : number) {
+  const list = loadTasks()
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id != id) {
+      continue
+    }
+    const t = list[i]
+    if (!taskLabelHasRepeat(t.repeatLabel)) {
+      t.done = true
+      saveTasks(list)
+      return
+    }
+    if (!repeatDoneDayKeysContains(t.repeatDoneDayKeys, dayKey)) {
+      t.repeatDoneDayKeys.push(dayKey)
+    }
+    t.done = false
+    saveTasks(list)
+    return
+  }
+}
+
+export function markUndone(id : string, dayKey : number) {
+  const list = loadTasks()
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id != id) {
+      continue
+    }
+    const t = list[i]
+    if (!taskLabelHasRepeat(t.repeatLabel)) {
+      t.done = false
+      saveTasks(list)
+      return
+    }
+    const next : number[] = []
+    for (let j = 0; j < t.repeatDoneDayKeys.length; j++) {
+      if (t.repeatDoneDayKeys[j] != dayKey) {
+        next.push(t.repeatDoneDayKeys[j])
+      }
+    }
+    t.repeatDoneDayKeys = next
+    t.done = false
+    saveTasks(list)
+    return
+  }
+}
+
+export function deleteTask(id : string) {
+  const list = loadTasks()
+  const pathsToUnlink : string[] = []
+  const next : HomeworkTask[] = []
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id == id) {
+      for (let j = 0; j < list[i].imagePaths.length; j++) {
+        pathsToUnlink.push(list[i].imagePaths[j])
+      }
+      continue
+    }
+    next.push(list[i])
+  }
+  saveTasks(next)
+  unlinkHomeworkAttachmentFiles(pathsToUnlink)
+}
+
+export function getTaskById(id : string) : HomeworkTask | null {
+  const list = loadTasks()
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id == id) {
+      return list[i]
+    }
+  }
+  return null
+}

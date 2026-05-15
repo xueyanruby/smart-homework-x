@@ -1,0 +1,45 @@
+/** 首页 section 区域截图（不含 ⋯ 菜单）；微信 Skyline snapshot，App takeSnapshot，失败回退 canvas */
+
+import {
+  buildSnapshotPayload,
+  captureSectionToTempFile,
+  saveTempFileToAlbum,
+  shareImageFile,
+  type SnapshotPayload,
+} from './useHomeListSnapshot.uts'
+
+export { buildSnapshotPayload, type SnapshotPayload }
+
+export const SECTION_CAPTURE_ID = 'hw-section-capture'
+
+export { SECTION_SNAPSHOT_ID } from './useHomeListSnapshot.uts'
+
+export function saveSectionSnapshot(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string) => void,
+) {
+  captureSectionToTempFile(canvasId, component, payload, (ok, msg, filePath) => {
+    if (!ok) {
+      onFinish(false, msg)
+      return
+    }
+    saveTempFileToAlbum(filePath, onFinish)
+  })
+}
+
+export function shareSectionSnapshot(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string) => void,
+) {
+  captureSectionToTempFile(canvasId, component, payload, (ok, msg, filePath) => {
+    if (!ok) {
+      onFinish(false, msg)
+      return
+    }
+    shareImageFile(filePath, onFinish)
+  })
+}

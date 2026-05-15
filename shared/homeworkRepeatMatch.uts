@@ -1,0 +1,109 @@
+/** 首页按日：无重复看完成时间；有重复且配置了生效起点则以「生效时间 ∩ 重复规则」为准（完成时间不再截断后续周三等） */
+
+import { dateFromDayKey, parseChineseDateLabel, taskCoversDayKey } from './homeworkDateUtils.uts'
+
+/** 与 HomeworkTask 字段子集一致，避免与 homeworkStore 循环依赖 */
+export type RepeatCalendarTaskSlice = {
+  startDateLabel : string
+  endDateLabel : string
+  repeatLabel : string
+  repeatWeekMask : string
+  repeatMonthDayMask : string
+  repeatValidStartLabel : string
+  repeatValidEndLabel : string
+  repeatValidEndNever : boolean
+}
+
+export function taskLabelHasRepeat(repeatLabel : string) : boolean {
+  const r = repeatLabel != null ? repeatLabel : ''
+  if (r == '不重复' || r == '无重复' || r.length == 0) {
+    return false
+  }
+  return true
+}
+
+function repeatKindFromLabel(label : string) : string {
+  const l = label != null ? label : ''
+  if (l == '每日重复' || l == '每天') {
+    return 'daily'
+  }
+  if (l.indexOf('每月重复') == 0) {
+    return 'monthly'
+  }
+  if (l.indexOf('自定义周重复') == 0) {
+    return 'customWeek'
+  }
+  if (l == '每周' || l == '工作日（周一至周五）') {
+    return 'customWeek'
+  }
+  return 'none'
+}
+
+function padMaskRight(s : string, len : number, ch : string) : string {
+  let out = s != null ? s : ''
+  while (out.length < len) {
+    out = out + ch
+  }
+  return out
+}
+
+function dayKeyInRepeatValidity(task : RepeatCalendarTaskSlice, dayKey : number) : boolean {
+  const vs = parseChineseDateLabel(task.repeatValidStartLabel)
+  if (vs < 0) {
+    return true
+  }
+  if (dayKey < vs) {
+    return false
+  }
+  if (task.repeatValidEndNever) {
+    return true
+  }
+  const ve = parseChineseDateLabel(task.repeatValidEndLabel)
+  if (ve < 0) {
+    return true
+  }
+  return dayKey <= ve
+}
+
+function dayKeyMatchesRepeatPattern(task : RepeatCalendarTaskSlice, dayKey : number) : boolean {
+  const kind = repeatKindFromLabel(task.repeatLabel != null ? task.repeatLabel : '')
+  if (kind == 'daily') {
+    return true
+  }
+  if (kind == 'monthly') {
+    const d = dateFromDayKey(dayKey)
+    const dom = d.getDate()
+    const idx = dom - 1
+    const mask = padMaskRight(task.repeatMonthDayMask, 31, '0')
+    if (idx < 0 || idx >= 31) {
+      return false
+    }
+    return mask.charAt(idx) == '1'
+  }
+  if (kind == 'customWeek') {
+    const d = dateFromDayKey(dayKey)
+    const js = d.getDay()
+    const mon0 = (js + 6) % 7
+    const mask = padMaskRight(task.repeatWeekMask, 7, '0')
+    return mask.charAt(mon0) == '1'
+  }
+  return false
+}
+
+/** 无重复：仅完成时间。有重复：须落在重复规则当日；若已配置生效起点，则还须落在生效时间内（不再用完成时间卡掉生效内的后续重复日）；未配置生效起点时仍与完成时间求交。 */
+export function taskShowsOnCalendarDay(task : RepeatCalendarTaskSlice, dayKey : number) : boolean {
+  if (!taskLabelHasRepeat(task.repeatLabel)) {
+    return taskCoversDayKey(task.startDateLabel, task.endDateLabel, dayKey)
+  }
+  if (!dayKeyInRepeatValidity(task, dayKey)) {
+    return false
+  }
+  if (!dayKeyMatchesRepeatPattern(task, dayKey)) {
+    return false
+  }
+  const vs = parseChineseDateLabel(task.repeatValidStartLabel)
+  if (vs >= 0) {
+    return true
+  }
+  return taskCoversDayKey(task.startDateLabel, task.endDateLabel, dayKey)
+}

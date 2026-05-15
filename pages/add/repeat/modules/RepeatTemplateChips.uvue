@@ -1,0 +1,62 @@
+<template>
+  <view class="chips">
+    <view class="chip chip--mint" @click="emit('weekdaily')">
+      <text class="chip__txt chip__txt--mint">本周每日</text>
+    </view>
+    <view class="chip chip--sec" @click="emit('workweek')">
+      <text class="chip__txt chip__txt--sec">工作日重复</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  const emit = defineEmits(['weekdaily', 'workweek'])
+</script>
+
+<style scoped>
+  .chips {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .chip {
+    padding-left: 32rpx;
+    padding-right: 32rpx;
+    padding-top: 16rpx;
+    padding-bottom: 16rpx;
+    border-radius: 9999rpx;
+    margin-right: 24rpx;
+    margin-bottom: 16rpx;
+  }
+
+  .chip--mint {
+    background-color: rgba(0, 200, 83, 0.1);
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(0, 200, 83, 0.2);
+  }
+
+  .chip--sec {
+    background-color: rgba(212, 232, 208, 0.3);
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(212, 232, 208, 0.5);
+  }
+
+  .chip__txt {
+    font-size: 28rpx;
+    font-weight: 600;
+    line-height: 40rpx;
+    letter-spacing: 0.05em;
+  }
+
+  .chip__txt--mint {
+    color: #00c853;
+  }
+
+  .chip__txt--sec {
+    color: #455644;
+  }
+</style>

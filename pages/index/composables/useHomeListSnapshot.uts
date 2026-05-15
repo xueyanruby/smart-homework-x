@@ -1,0 +1,849 @@
+/** 首页 section 截图：微信 Skyline snapshot；App takeSnapshot；回退 canvas */
+
+export const SECTION_SNAPSHOT_ID = 'hw-section-snapshot'
+
+export type SnapshotTaskRow = {
+  title : string
+  subject : string
+  dueRangeMain : string
+  dueRangeSub : string
+  isDone : boolean
+}
+
+export type SnapshotPayload = {
+  dateTitle : string
+  taskCountLine : string
+  filterName : string
+  rows : SnapshotTaskRow[]
+}
+
+function wrapTextLines(text : string, maxChars : number) : string[] {
+  const t = text != null ? text : ''
+  if (t.length == 0) {
+    return ['']
+  }
+  const out : string[] = []
+  let i = 0
+  while (i < t.length) {
+    const end = i + maxChars < t.length ? i + maxChars : t.length
+    out.push(t.substring(i, end))
+    i = end
+  }
+  return out
+}
+
+function estimateSectionHeight(payload : SnapshotPayload, canvasW : number) : number {
+  const pad = uni.upx2px(40)
+  const contentW = canvasW - pad * 2
+  const titleMaxChars = contentW > 300 ? 22 : 16
+  let y = pad + 48
+  if (payload.rows.length == 0) {
+    y = y + 40 + pad
+    return y
+  }
+  for (let i = 0; i < payload.rows.length; i++) {
+    const r = payload.rows[i]
+    const titleLines = wrapTextLines(r.title, titleMaxChars)
+    y = y + titleLines.length * 30 + 24 + 20
+    if (r.dueRangeMain != null && r.dueRangeMain.length > 0) {
+      y = y + 22
+    }
+    if (r.dueRangeSub != null && r.dueRangeSub.length > 0) {
+      const subLines = wrapTextLines(r.dueRangeSub, titleMaxChars + 6)
+      y = y + subLines.length * 20
+    }
+    y = y + 22 + 14 + 48
+  }
+  y = y + pad
+  return y
+}
+
+function estimateHeight(payload : SnapshotPayload, canvasW : number) : number {
+  const pad = uni.upx2px(40)
+  const contentW = canvasW - pad * 2
+  const titleMaxChars = contentW > 300 ? 22 : 16
+  let y = pad + 8 + 36 + 30 + 24 + 28 + 20
+  if (payload.rows.length == 0) {
+    y = y + 40 + pad
+    return y
+  }
+  for (let i = 0; i < payload.rows.length; i++) {
+    const r = payload.rows[i]
+    const titleLines = wrapTextLines(r.title, titleMaxChars)
+    y = y + titleLines.length * 30 + 24 + 20
+    if (r.dueRangeMain != null && r.dueRangeMain.length > 0) {
+      y = y + 22
+    }
+    if (r.dueRangeSub != null && r.dueRangeSub.length > 0) {
+      const subLines = wrapTextLines(r.dueRangeSub, titleMaxChars + 6)
+      y = y + subLines.length * 20
+    }
+    y = y + 22 + 14
+  }
+  y = y + pad
+  return y
+}
+
+export function getSnapshotCanvasHeightPx(payload : SnapshotPayload) : number {
+  const w = uni.upx2px(750)
+  let h = estimateHeight(payload, w)
+  if (h > 8000) {
+    h = 8000
+  }
+  if (h < 400) {
+    h = 400
+  }
+  return h
+}
+
+export function getSectionSnapshotCanvasHeightPx(payload : SnapshotPayload) : number {
+  const w = uni.upx2px(750)
+  let h = estimateSectionHeight(payload, w)
+  if (h > 8000) {
+    h = 8000
+  }
+  if (h < 400) {
+    h = 400
+  }
+  return h
+}
+
+export function saveTempFileToAlbum(tempFilePath : string, onFinish : (ok : boolean, msg : string) => void) {
+  if (tempFilePath.length == 0) {
+    onFinish(false, '导出失败')
+    return
+  }
+  uni.saveImageToPhotosAlbum({
+    filePath: tempFilePath,
+    success: () => {
+      onFinish(true, '已保存到相册')
+    },
+    fail: () => {
+      onFinish(false, '保存失败，请检查相册权限')
+    },
+  })
+}
+
+function exportCanvasToTempFile(
+  canvasId : string,
+  component : any | null,
+  w : number,
+  hCap : number,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  uni.canvasToTempFilePath(
+    {
+      canvasId: canvasId,
+      x: 0,
+      y: 0,
+      width: w,
+      height: hCap,
+      destWidth: w * 2,
+      destHeight: hCap * 2,
+      fileType: 'png',
+      quality: 1,
+      success: (res) => {
+        const fp = res.tempFilePath
+        const path = fp != null ? fp : ''
+        if (path.length == 0) {
+          onFinish(false, '导出失败', '')
+          return
+        }
+        onFinish(true, '', path)
+      },
+      fail: () => {
+        onFinish(false, '生成图片失败', '')
+      },
+    },
+    component,
+  )
+}
+
+function drawSnapshotBody(
+  payload : SnapshotPayload,
+  w : number,
+  pad : number,
+  titleMaxChars : number,
+  hCap : number,
+  setFillStyle : (color : string) => void,
+  setFontSize : (size : number) => void,
+  fillText : (text : string, x : number, y : number) => void,
+  fillRect : (x : number, y : number, width : number, height : number) => void,
+  strokeLine : (y : number, color : string) => void,
+) {
+  setFillStyle('#f8faf3')
+  fillRect(0, 0, w, hCap)
+
+  let y = pad + 8
+  setFillStyle('#2d342c')
+  setFontSize(20)
+  fillText('作业清单', pad, y)
+  y = y + 36
+
+  setFontSize(17)
+  fillText(payload.dateTitle, pad, y)
+  y = y + 30
+
+  setFillStyle('#5a6157')
+  setFontSize(14)
+  fillText(payload.taskCountLine, pad, y)
+  y = y + 24
+  fillText('筛选：' + payload.filterName, pad, y)
+  y = y + 28
+
+  strokeLine(y, '#dee5d8')
+  y = y + 20
+
+  if (payload.rows.length == 0) {
+    setFillStyle('#8a9285')
+    setFontSize(15)
+    fillText('暂无作业', pad, y)
+    return
+  }
+
+  for (let ri = 0; ri < payload.rows.length; ri++) {
+    const r = payload.rows[ri]
+    const titleLines = wrapTextLines(r.title, titleMaxChars)
+    setFillStyle('#2d342c')
+    setFontSize(16)
+    for (let ti = 0; ti < titleLines.length; ti++) {
+      fillText(titleLines[ti], pad, y)
+      y = y + 30
+    }
+    setFillStyle('#3e6942')
+    setFontSize(13)
+    fillText('「' + r.subject + '」', pad, y)
+    y = y + 24
+    setFillStyle('#5a6157')
+    setFontSize(12)
+    if (r.dueRangeMain != null && r.dueRangeMain.length > 0) {
+      fillText(r.dueRangeMain, pad, y)
+      y = y + 22
+    }
+    if (r.dueRangeSub != null && r.dueRangeSub.length > 0) {
+      const subLines = wrapTextLines(r.dueRangeSub, titleMaxChars + 6)
+      for (let si = 0; si < subLines.length; si++) {
+        fillText(subLines[si], pad, y)
+        y = y + 20
+      }
+    }
+    setFillStyle(r.isDone ? '#455644' : '#305b36')
+    setFontSize(12)
+    fillText(r.isDone ? '状态：已完成' : '状态：未完成', pad, y)
+    y = y + 22
+    strokeLine(y, '#e0e6da')
+    y = y + 14
+  }
+}
+
+/** 与页面 section 一致：仅标题 + 任务卡片（无 ⋯ 菜单、无清单页眉） */
+function drawSectionSnapshotBody(
+  payload : SnapshotPayload,
+  w : number,
+  pad : number,
+  titleMaxChars : number,
+  hCap : number,
+  setFillStyle : (color : string) => void,
+  setFontSize : (size : number) => void,
+  fillText : (text : string, x : number, y : number) => void,
+  fillRect : (x : number, y : number, width : number, height : number) => void,
+  strokeLine : (y : number, color : string) => void,
+) {
+  setFillStyle('#f8faf3')
+  fillRect(0, 0, w, hCap)
+
+  let y = pad
+  setFillStyle('#2d342c')
+  setFontSize(20)
+  fillText(payload.dateTitle, pad, y)
+  y = y + 48
+
+  if (payload.rows.length == 0) {
+    setFillStyle('#8a9285')
+    setFontSize(15)
+    fillText('暂无作业', pad, y)
+    return
+  }
+
+  for (let ri = 0; ri < payload.rows.length; ri++) {
+    const r = payload.rows[ri]
+    const titleLines = wrapTextLines(r.title, titleMaxChars)
+    setFillStyle('#2d342c')
+    setFontSize(16)
+    for (let ti = 0; ti < titleLines.length; ti++) {
+      fillText(titleLines[ti], pad, y)
+      y = y + 30
+    }
+    setFillStyle('#3e6942')
+    setFontSize(13)
+    fillText('「' + r.subject + '」', pad, y)
+    y = y + 24
+    setFillStyle('#5a6157')
+    setFontSize(12)
+    if (r.dueRangeMain != null && r.dueRangeMain.length > 0) {
+      fillText(r.dueRangeMain, pad, y)
+      y = y + 22
+    }
+    if (r.dueRangeSub != null && r.dueRangeSub.length > 0) {
+      const subLines = wrapTextLines(r.dueRangeSub, titleMaxChars + 6)
+      for (let si = 0; si < subLines.length; si++) {
+        fillText(subLines[si], pad, y)
+        y = y + 20
+      }
+    }
+    setFillStyle(r.isDone ? '#455644' : '#305b36')
+    setFontSize(12)
+    fillText(r.isDone ? '状态：已完成' : '状态：未完成', pad, y)
+    y = y + 22
+    strokeLine(y, '#e0e6da')
+    y = y + 14 + 48
+  }
+}
+
+// #ifdef MP-WEIXIN
+function dataUrlToTempFile(dataUrl : string, onFinish : (ok : boolean, msg : string, filePath : string) => void) {
+  const comma = dataUrl.indexOf(',')
+  const base64 = comma >= 0 ? dataUrl.substring(comma + 1) : dataUrl
+  if (base64.length == 0) {
+    onFinish(false, '导出失败', '')
+    return
+  }
+  const root = uni.env.USER_DATA_PATH
+  if (root == null || root.length == 0) {
+    onFinish(false, '导出失败', '')
+    return
+  }
+  const u = uni as UTSJSONObject
+  const fn = u['getFileSystemManager']
+  if (fn == null || typeof fn != 'function') {
+    onFinish(false, '导出失败', '')
+    return
+  }
+  const invoke = fn as () => any
+  let fsm : any | null = null
+  try {
+    fsm = invoke()
+  } catch (e) {
+    fsm = null
+  }
+  if (fsm == null) {
+    onFinish(false, '导出失败', '')
+    return
+  }
+  const filePath = root + '/hw_list_snapshot_' + Date.now().toString() + '.png'
+  fsm.writeFile({
+    filePath: filePath,
+    data: base64,
+    encoding: 'base64',
+    success: () => {
+      onFinish(true, '', filePath)
+    },
+    fail: () => {
+      onFinish(false, '导出失败', '')
+    },
+  })
+}
+
+function shareImageFileMpWeixin(filePath : string, onFinish : (ok : boolean, msg : string) => void) {
+  if (filePath.length == 0) {
+    onFinish(false, '分享失败')
+    return
+  }
+  wx.showShareImageMenu({
+    path: filePath,
+    success: () => {
+      onFinish(true, '')
+    },
+    fail: () => {
+      onFinish(false, '分享失败')
+    },
+  })
+}
+
+function generateSectionSnapshotImageOnMpWeixin(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  const w = uni.upx2px(750)
+  const pad = uni.upx2px(40)
+  const contentW = w - pad * 2
+  const titleMaxChars = contentW > 300 ? 22 : 16
+  const hCap = getSectionSnapshotCanvasHeightPx(payload)
+
+  uni.createCanvasContextAsync({
+    id: canvasId,
+    component: component,
+    success: (canvasCtx) => {
+      const ctx = canvasCtx.getContext('2d')
+      if (ctx == null) {
+        onFinish(false, '画布初始化失败', '')
+        return
+      }
+
+      drawSectionSnapshotBody(
+        payload,
+        w,
+        pad,
+        titleMaxChars,
+        hCap,
+        (color : string) => {
+          ctx.fillStyle = color
+        },
+        (size : number) => {
+          ctx.font = size.toString() + 'px sans-serif'
+        },
+        (text : string, x : number, y : number) => {
+          ctx.fillText(text, x, y)
+        },
+        (x : number, y : number, width : number, height : number) => {
+          ctx.fillRect(x, y, width, height)
+        },
+        (y : number, color : string) => {
+          ctx.strokeStyle = color
+          ctx.beginPath()
+          ctx.moveTo(pad, y)
+          ctx.lineTo(w - pad, y)
+          ctx.stroke()
+        },
+      )
+
+      // Skyline + Canvas 2D 模式下，uni.canvasToTempFilePath(canvasId) 是 Legacy API，
+      // 在 Skyline 中静默挂起（不触发 success/fail），直接用 toDataURL 导出更可靠。
+      setTimeout(() => {
+        const dataUrl = canvasCtx.toDataURL('image/png', 1)
+        if (dataUrl == null || dataUrl.length == 0) {
+          onFinish(false, '生成图片失败', '')
+          return
+        }
+        dataUrlToTempFile(dataUrl, onFinish)
+      }, 200)
+    },
+    fail: () => {
+      onFinish(false, '画布初始化失败', '')
+    },
+  })
+}
+
+function generateListSnapshotImageOnMpWeixin(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  const w = uni.upx2px(750)
+  const pad = uni.upx2px(40)
+  const contentW = w - pad * 2
+  const titleMaxChars = contentW > 300 ? 22 : 16
+  const hCap = getSnapshotCanvasHeightPx(payload)
+
+  uni.createCanvasContextAsync({
+    id: canvasId,
+    component: component,
+    success: (canvasCtx) => {
+      const ctx = canvasCtx.getContext('2d')
+      if (ctx == null) {
+        onFinish(false, '画布初始化失败', '')
+        return
+      }
+
+      drawSnapshotBody(
+        payload,
+        w,
+        pad,
+        titleMaxChars,
+        hCap,
+        (color : string) => {
+          ctx.fillStyle = color
+        },
+        (size : number) => {
+          ctx.font = size.toString() + 'px sans-serif'
+        },
+        (text : string, x : number, y : number) => {
+          ctx.fillText(text, x, y)
+        },
+        (x : number, y : number, width : number, height : number) => {
+          ctx.fillRect(x, y, width, height)
+        },
+        (y : number, color : string) => {
+          ctx.strokeStyle = color
+          ctx.beginPath()
+          ctx.moveTo(pad, y)
+          ctx.lineTo(w - pad, y)
+          ctx.stroke()
+        },
+      )
+
+      setTimeout(() => {
+        exportCanvasToTempFile(canvasId, component, w, hCap, (ok, msg, path) => {
+          if (ok) {
+            onFinish(true, '', path)
+            return
+          }
+          const dataUrl = canvasCtx.toDataURL('image/png', 1)
+          if (dataUrl == null || dataUrl.length == 0) {
+            onFinish(false, msg, '')
+            return
+          }
+          dataUrlToTempFile(dataUrl, onFinish)
+        })
+      }, 200)
+    },
+    fail: () => {
+      onFinish(false, '画布初始化失败', '')
+    },
+  })
+}
+// #endif
+
+function generateSectionSnapshotImageLegacy(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  const w = uni.upx2px(750)
+  const pad = uni.upx2px(40)
+  const contentW = w - pad * 2
+  const titleMaxChars = contentW > 300 ? 22 : 16
+  const hCap = getSectionSnapshotCanvasHeightPx(payload)
+
+  const ctx = uni.createCanvasContext(canvasId, component)
+
+  drawSectionSnapshotBody(
+    payload,
+    w,
+    pad,
+    titleMaxChars,
+    hCap,
+    (color : string) => {
+      ctx.setFillStyle(color)
+    },
+    (size : number) => {
+      ctx.setFontSize(size)
+    },
+    (text : string, x : number, y : number) => {
+      ctx.fillText(text, x, y)
+    },
+    (x : number, y : number, width : number, height : number) => {
+      ctx.fillRect(x, y, width, height)
+    },
+    (y : number, color : string) => {
+      ctx.setStrokeStyle(color)
+      ctx.beginPath()
+      ctx.moveTo(pad, y)
+      ctx.lineTo(w - pad, y)
+      ctx.stroke()
+    },
+  )
+
+  ctx.draw(false, () => {
+    exportCanvasToTempFile(canvasId, component, w, hCap, onFinish)
+  })
+}
+
+function generateListSnapshotImageLegacy(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  const w = uni.upx2px(750)
+  const pad = uni.upx2px(40)
+  const contentW = w - pad * 2
+  const titleMaxChars = contentW > 300 ? 22 : 16
+  const hCap = getSnapshotCanvasHeightPx(payload)
+
+  const ctx = uni.createCanvasContext(canvasId, component)
+
+  drawSnapshotBody(
+    payload,
+    w,
+    pad,
+    titleMaxChars,
+    hCap,
+    (color : string) => {
+      ctx.setFillStyle(color)
+    },
+    (size : number) => {
+      ctx.setFontSize(size)
+    },
+    (text : string, x : number, y : number) => {
+      ctx.fillText(text, x, y)
+    },
+    (x : number, y : number, width : number, height : number) => {
+      ctx.fillRect(x, y, width, height)
+    },
+    (y : number, color : string) => {
+      ctx.setStrokeStyle(color)
+      ctx.beginPath()
+      ctx.moveTo(pad, y)
+      ctx.lineTo(w - pad, y)
+      ctx.stroke()
+    },
+  )
+
+  ctx.draw(false, () => {
+    exportCanvasToTempFile(canvasId, component, w, hCap, onFinish)
+  })
+}
+
+// #ifdef APP-PLUS
+function shareImageFileApp(filePath : string, onFinish : (ok : boolean, msg : string) => void) {
+  if (filePath.length == 0) {
+    onFinish(false, '分享失败')
+    return
+  }
+  uni.share({
+    provider: 'weixin',
+    type: 2,
+    imageUrl: filePath,
+    scene: 'WXSceneSession',
+    success: () => {
+      onFinish(true, '')
+    },
+    fail: () => {
+      onFinish(false, '分享失败')
+    },
+  })
+}
+// #endif
+
+export function shareImageFile(filePath : string, onFinish : (ok : boolean, msg : string) => void) {
+  // #ifdef MP-WEIXIN
+  shareImageFileMpWeixin(filePath, onFinish)
+  // #endif
+  // #ifdef APP-PLUS
+  shareImageFileApp(filePath, onFinish)
+  // #endif
+  // #ifndef MP-WEIXIN
+  // #ifndef APP-PLUS
+  onFinish(false, '当前平台请使用保存功能')
+  // #endif
+  // #endif
+}
+
+function generateSectionSnapshotImage(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  // #ifdef MP-WEIXIN
+  generateSectionSnapshotImageOnMpWeixin(canvasId, component, payload, onFinish)
+  // #endif
+  // #ifndef MP-WEIXIN
+  generateSectionSnapshotImageLegacy(canvasId, component, payload, onFinish)
+  // #endif
+}
+
+// #ifdef MP-WEIXIN
+/**
+ * 用 Skyline SelectorQuery 抓取 snapshot 节点截图。
+ * 注意：不使用 query.in(component)，Skyline 合成阴影树默认允许跨自定义组件查找。
+ * 传入 component 会把查询限制在 page 自身作用域，导致子组件内的节点找不到。
+ */
+function captureSectionBySkylineSnapshot(
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  const query = uni.createSelectorQuery()
+  query.select('#' + SECTION_SNAPSHOT_ID)
+    .node()
+    .exec((res : any) => {
+      if (res == null) {
+        console.warn('[snapshot] exec res is null')
+        onFinish(false, '截图失败', '')
+        return
+      }
+      const arr = res as any[]
+      if (arr.length == 0) {
+        console.warn('[snapshot] exec arr empty')
+        onFinish(false, '截图失败', '')
+        return
+      }
+      const item = arr[0] as UTSJSONObject
+      if (item == null) {
+        console.warn('[snapshot] arr[0] is null')
+        onFinish(false, '截图失败', '')
+        return
+      }
+      const nodeVal = item['node']
+      if (nodeVal == null) {
+        console.warn('[snapshot] node is null — 节点未找到，检查 <snapshot id> 是否在 Skyline 渲染且 ID 正确')
+        onFinish(false, '截图失败', '')
+        return
+      }
+      const snapNode = nodeVal as UTSJSONObject
+      const takeFn = snapNode['takeSnapshot']
+      if (takeFn == null || typeof takeFn != 'function') {
+        console.warn('[snapshot] takeSnapshot not a function')
+        onFinish(false, '截图失败', '')
+        return
+      }
+      const invoke = takeFn as (options : UTSJSONObject) => void
+      invoke({
+        type: 'file',
+        format: 'png',
+        success: (snapRes : UTSJSONObject) => {
+          const pathVal = snapRes['tempFilePath']
+          const path = pathVal != null ? (pathVal as string) : ''
+          if (path.length > 0) {
+            console.log('[snapshot] takeSnapshot ok:', path)
+            onFinish(true, '', path)
+          } else {
+            console.warn('[snapshot] tempFilePath empty')
+            onFinish(false, '导出失败', '')
+          }
+        },
+        fail: (err : any) => {
+          console.warn('[snapshot] takeSnapshot fail', err)
+          onFinish(false, '截图失败', '')
+        },
+      })
+    })
+}
+// #endif
+
+function tryCaptureSectionByTakeSnapshot(
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) : boolean {
+  const el = uni.getElementById('hw-section-capture')
+  if (el == null) {
+    return false
+  }
+  const elObj = el as UTSJSONObject
+  const takeFn = elObj['takeSnapshot']
+  if (takeFn == null || typeof takeFn != 'function') {
+    return false
+  }
+  const invoke = takeFn as (options : UTSJSONObject) => void
+  invoke({
+    success: (res : UTSJSONObject) => {
+      const pathVal = res['tempFilePath']
+      const path = pathVal != null ? (pathVal as string) : ''
+      if (path.length > 0) {
+        onFinish(true, '', path)
+      } else {
+        onFinish(false, '截图失败', '')
+      }
+    },
+    fail: () => {
+      onFinish(false, '截图失败', '')
+    },
+  })
+  return true
+}
+
+/**
+ * 微信：Skyline snapshot；App：takeSnapshot；其它/失败：canvas 绘制 section（均不含 ⋯ 菜单）
+ */
+export function captureSectionToTempFile(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  // #ifdef MP-WEIXIN
+  // 注意：Skyline snapshot 截图现由 index.uvue 通过 taskSectionRef.takeSkylineCapture() 处理，
+  // 此处直接走 canvas 绘制作为 fallback（从 index.uvue 调用时已经是 Skyline 失败后的路径）
+  console.log('[snapshot] captureSectionToTempFile canvas path')
+  generateSectionSnapshotImage(canvasId, component, payload, onFinish)
+  return
+  // #endif
+
+  if (tryCaptureSectionByTakeSnapshot((ok, msg, path) => {
+    if (ok && path.length > 0) {
+      onFinish(true, '', path)
+      return
+    }
+    generateSectionSnapshotImage(canvasId, component, payload, onFinish)
+  })) {
+    return
+  }
+  generateSectionSnapshotImage(canvasId, component, payload, onFinish)
+}
+
+/**
+ * @param component 页面/组件实例；微信小程序需传入页面 proxy
+ */
+export function generateListSnapshotImage(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string, filePath : string) => void,
+) {
+  // #ifdef MP-WEIXIN
+  generateListSnapshotImageOnMpWeixin(canvasId, component, payload, onFinish)
+  // #endif
+  // #ifndef MP-WEIXIN
+  generateListSnapshotImageLegacy(canvasId, component, payload, onFinish)
+  // #endif
+}
+
+/**
+ * @param component 页面/组件实例；微信小程序需传入页面 proxy
+ */
+export function saveListSnapshotImage(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string) => void,
+) {
+  generateListSnapshotImage(canvasId, component, payload, (ok, msg, filePath) => {
+    if (!ok) {
+      onFinish(false, msg)
+      return
+    }
+    saveTempFileToAlbum(filePath, onFinish)
+  })
+}
+
+/**
+ * @param component 页面/组件实例；微信小程序需传入页面 proxy
+ */
+export function shareListSnapshotImage(
+  canvasId : string,
+  component : any | null,
+  payload : SnapshotPayload,
+  onFinish : (ok : boolean, msg : string) => void,
+) {
+  generateListSnapshotImage(canvasId, component, payload, (ok, msg, filePath) => {
+    if (!ok) {
+      onFinish(false, msg)
+      return
+    }
+    shareImageFile(filePath, onFinish)
+  })
+}
+
+export function buildSnapshotPayload(
+  dateTitle : string,
+  taskCountLine : string,
+  filterName : string,
+  tasks : {
+    title : string
+    subject : string
+    dueRangeMain : string
+    dueRangeSub : string
+    trailing : string
+  }[],
+) : SnapshotPayload {
+  const rows : SnapshotTaskRow[] = []
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i]
+    rows.push({
+      title: t.title,
+      subject: t.subject,
+      dueRangeMain: t.dueRangeMain != null ? t.dueRangeMain : '',
+      dueRangeSub: t.dueRangeSub != null ? t.dueRangeSub : '',
+      isDone: t.trailing == 'donePill',
+    })
+  }
+  return {
+    dateTitle: dateTitle,
+    taskCountLine: taskCountLine,
+    filterName: filterName,
+    rows: rows,
+  }
+}

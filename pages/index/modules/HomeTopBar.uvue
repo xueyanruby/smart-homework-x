@@ -1,0 +1,52 @@
+<template>
+  <view>
+    <view class="status-spacer" :style="'height:' + statusBarHeight + 'px'"></view>
+    <view class="top-bar">
+      <view class="top-bar__left">
+        <text class="top-bar__title">{{ title }}</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  defineProps({
+    statusBarHeight: { type: Number, default: 20 },
+    title: { type: String, default: '作业备忘录' },
+  })
+</script>
+
+<style scoped>
+  .status-spacer {
+    width: 750rpx;
+    background-color: #f8faf3;
+  }
+
+  .top-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 750rpx;
+    height: 128rpx;
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    background-color: #f8faf3;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: #dee5d8;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .top-bar__left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .top-bar__title {
+    font-size: 40rpx;
+    font-weight: 700;
+    color: #2d342c;
+  }
+</style>

@@ -1,0 +1,122 @@
+<template>
+  <view class="page">
+    <detail-top-bar :status-bar-height="statusBarHeight" @back="goBack"></detail-top-bar>
+
+    <scroll-view class="main-scroll" scroll-y="true">
+      <view class="scroll-inner">
+        <view class="pad">
+          <view class="sec">
+            <detail-identity-block
+              :status-label="detail.statusLabel"
+              :subject-tag="detail.subjectTag"
+              :title="detail.title"
+              :date-range-line="detail.dateRangeLine"
+              :done="detail.statusLabel == '已完成'"
+              :subject-en="detail.subjectTag == '英语'"
+            ></detail-identity-block>
+          </view>
+
+          <view class="sec sec--mt">
+            <detail-description-card
+              :section-title="detail.descriptionTitle"
+              :body="detail.descriptionBody"
+            ></detail-description-card>
+          </view>
+
+          <view class="sec sec--mt">
+            <detail-attachment-grid :images="detail.imagePaths"></detail-attachment-grid>
+          </view>
+
+          <view class="sec sec--mt">
+            <detail-repeat-banner
+              :title-line="detail.repeatTitle"
+              :sub-line="detail.repeatSub"
+            ></detail-repeat-banner>
+          </view>
+
+          <view class="sec sec--mt">
+            <detail-dual-actions @edit="onEdit" @delete="onDelete"></detail-dual-actions>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <detail-mark-done-bar
+      :completed="detailCompleted"
+      @mark="onMarkComplete"
+      @unmark="onUnmarkComplete"
+    ></detail-mark-done-bar>
+  </view>
+</template>
+
+<script setup>
+  import { useHomeworkDetail } from './composables/useHomeworkDetail.uts'
+  import DetailTopBar from './modules/DetailTopBar.uvue'
+  import DetailIdentityBlock from './modules/DetailIdentityBlock.uvue'
+  import DetailDescriptionCard from './modules/DetailDescriptionCard.uvue'
+  import DetailAttachmentGrid from './modules/DetailAttachmentGrid.uvue'
+  import DetailRepeatBanner from './modules/DetailRepeatBanner.uvue'
+  import DetailDualActions from './modules/DetailDualActions.uvue'
+  import DetailMarkDoneBar from './modules/DetailMarkDoneBar.uvue'
+
+  const {
+    statusBarHeight,
+    detail,
+    detailCompleted,
+    initDetail,
+    refreshDetail,
+    goBack,
+    onEdit,
+    onDelete,
+    onMarkComplete,
+    onUnmarkComplete,
+  } = useHomeworkDetail()
+
+  onLoad((opts) => {
+    if (opts != null) {
+      initDetail(opts as UTSJSONObject)
+    } else {
+      initDetail(null)
+    }
+  })
+
+  onShow(() => {
+    refreshDetail()
+  })
+</script>
+
+<style>
+  .page {
+    display: flex;
+    flex-direction: column;
+    width: 750rpx;
+    height: 100%;
+    background-color: #f8faf3;
+  }
+
+  .main-scroll {
+    flex: 1;
+    width: 750rpx;
+  }
+
+  .scroll-inner {
+    display: flex;
+    flex-direction: column;
+    width: 750rpx;
+    padding-bottom: 280rpx;
+  }
+
+  .pad {
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    padding-top: 48rpx;
+  }
+
+  .sec {
+    width: 100%;
+  }
+
+  .sec--mt {
+    margin-top: 48rpx;
+  }
+</style>

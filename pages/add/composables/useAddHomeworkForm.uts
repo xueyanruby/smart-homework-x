@@ -1,0 +1,405 @@
+/** 添加作业页：表单状态、初始化、取消/保存 */
+
+import { repeatIdFromLabel, REPEAT_STORAGE_KEY, REPEAT_META_STORAGE_KEY } from '../repeat/composables/repeatRuleConstants.uts'
+import { createTask, getTaskById, updateTask } from '../../../shared/homeworkStore.uts'
+import { chineseDateLabelFromDate, parseChineseDateLabel, stripTime } from '../../../shared/homeworkDateUtils.uts'
+import { persistTempImagesToUserDir } from '../../../shared/homeworkImageStorage.uts'
+
+const MAX_IMAGES = 5
+
+export function useAddHomeworkForm() {
+  const statusBarHeight = ref(20)
+  const isSubmitting = ref(false)
+  const editingTaskId = ref('')
+  const pageTitle = ref('添加作业')
+
+  const todayLabel = chineseDateLabelFromDate(stripTime(new Date()))
+
+  const form = reactive({
+    title: '',
+    description: '',
+    subject: 'math',
+    customSubjectName: '',
+    startDateLabel: todayLabel,
+    endDateLabel: todayLabel,
+    repeatLabel: '不重复',
+    repeatWeekMask: '',
+    repeatMonthDayMask: '',
+    repeatValidStartLabel: '',
+    repeatValidEndLabel: '',
+    repeatValidEndNever: true,
+    imagePaths: [] as string[],
+  })
+
+  const isRepeatNoneForm = () : boolean => {
+    const r = form.repeatLabel != null ? form.repeatLabel : ''
+    return r == '不重复' || r == '无重复'
+  }
+
+  /** 有重复规则时：完成窗口期与重复互斥，日期收束为开始日（与截止同一天） */
+  const snapWindowToAnchorWhenRepeat = () => {
+    if (isRepeatNoneForm()) {
+      return
+    }
+    const a = parseChineseDateLabel(form.startDateLabel)
+    if (a < 0) {
+      const t0 = chineseDateLabelFromDate(stripTime(new Date()))
+      form.startDateLabel = t0
+      form.endDateLabel = t0
+      return
+    }
+    form.endDateLabel = form.startDateLabel
+  }
+
+  const resetFormDefaults = () => {
+    editingTaskId.value = ''
+    const t0 = chineseDateLabelFromDate(stripTime(new Date()))
+    form.title = ''
+    form.description = ''
+    form.subject = 'math'
+    form.customSubjectName = ''
+    form.startDateLabel = t0
+    form.endDateLabel = t0
+    form.repeatLabel = '不重复'
+    form.repeatWeekMask = ''
+    form.repeatMonthDayMask = ''
+    form.repeatValidStartLabel = ''
+    form.repeatValidEndLabel = ''
+    form.repeatValidEndNever = true
+    form.imagePaths.splice(0, form.imagePaths.length)
+  }
+
+  const initAddPage = (opts : UTSJSONObject | null) => {
+    const info = uni.getSystemInfoSync()
+    const h = info.statusBarHeight
+    statusBarHeight.value = h != null ? h : 20
+
+    let key = ''
+    if (opts != null) {
+      const k = opts['taskKey']
+      if (k != null) {
+        key = k as string
+      }
+    }
+    if (key.length > 0) {
+      const task = getTaskById(key)
+      if (task != null) {
+        editingTaskId.value = key
+        pageTitle.value = '编辑作业'
+        form.title = task.title
+        form.description = task.description
+        form.subject = task.subject
+        form.customSubjectName = task.customSubjectName
+        form.startDateLabel = task.startDateLabel
+        form.endDateLabel = task.endDateLabel
+        form.repeatLabel = task.repeatLabel
+        form.repeatWeekMask =
+          task.repeatWeekMask != null && task.repeatWeekMask.length > 0
+            ? task.repeatWeekMask
+            : ''
+        form.repeatMonthDayMask =
+          task.repeatMonthDayMask != null && task.repeatMonthDayMask.length > 0
+            ? task.repeatMonthDayMask
+            : ''
+        form.repeatValidStartLabel =
+          task.repeatValidStartLabel != null ? task.repeatValidStartLabel : ''
+        form.repeatValidEndLabel = task.repeatValidEndLabel != null ? task.repeatValidEndLabel : ''
+        form.repeatValidEndNever =
+          task.repeatValidEndNever != null ? task.repeatValidEndNever : true
+        form.imagePaths.splice(0, form.imagePaths.length)
+        for (let i = 0; i < task.imagePaths.length; i++) {
+          form.imagePaths.push(task.imagePaths[i])
+        }
+        snapWindowToAnchorWhenRepeat()
+        return
+      }
+    }
+    pageTitle.value = '添加作业'
+    resetFormDefaults()
+  }
+
+  const cancel = () => {
+    uni.navigateBack({})
+  }
+
+  const onUpdateSubject = (v : string) => {
+    form.subject = v
+    if (v != 'custom') {
+      form.customSubjectName = ''
+    }
+  }
+
+  const onUpdateStartDate = (v : string) => {
+    if (!isRepeatNoneForm()) {
+      return
+    }
+    form.startDateLabel = v
+  }
+
+  const onUpdateEndDate = (v : string) => {
+    if (!isRepeatNoneForm()) {
+      return
+    }
+    form.endDateLabel = v
+  }
+
+  const onUpdateCustomSubject = (v : string) => {
+    form.customSubjectName = v
+  }
+
+  const onRemoveImage = (idx : number) => {
+    if (idx < 0 || idx >= form.imagePaths.length) {
+      return
+    }
+    form.imagePaths.splice(idx, 1)
+  }
+
+  const submit = () => {
+    const t = form.title != null ? form.title.trim() : ''
+    if (t.length == 0) {
+      uni.showToast({ title: '请输入作业标题', icon: 'none' })
+      return
+    }
+    if (form.subject == 'custom') {
+      const c = form.customSubjectName != null ? form.customSubjectName.trim() : ''
+      if (c.length == 0) {
+        uni.showToast({ title: '请输入自定义科目', icon: 'none' })
+        return
+      }
+    }
+    snapWindowToAnchorWhenRepeat()
+    const a = parseChineseDateLabel(form.startDateLabel)
+    const b = parseChineseDateLabel(form.endDateLabel)
+    if (a < 0 || b < 0) {
+      uni.showToast({ title: '日期无效', icon: 'none' })
+      return
+    }
+    if (a > b) {
+      uni.showToast({ title: '开始日期不能晚于截止日期', icon: 'none' })
+      return
+    }
+    if (isSubmitting.value) {
+      return
+    }
+    isSubmitting.value = true
+    const customName =
+      form.subject == 'custom'
+        ? (form.customSubjectName != null ? form.customSubjectName.trim() : '')
+        : ''
+    const tempSnapshot : string[] = []
+    for (let i = 0; i < form.imagePaths.length; i++) {
+      tempSnapshot.push(form.imagePaths[i])
+    }
+    const persistedPaths = persistTempImagesToUserDir(tempSnapshot)
+    if (persistedPaths == null) {
+      uni.showToast({ title: '图片保存失败', icon: 'none' })
+      isSubmitting.value = false
+      return
+    }
+    const noRep = isRepeatNoneForm()
+    const payload = {
+      title: form.title,
+      description: form.description,
+      subject: form.subject,
+      customSubjectName: customName,
+      startDateLabel: form.startDateLabel,
+      endDateLabel: form.endDateLabel,
+      repeatLabel: form.repeatLabel,
+      repeatWeekMask:
+        form.repeatLabel != null && form.repeatLabel.indexOf('自定义周重复') == 0
+          ? form.repeatWeekMask != null && form.repeatWeekMask.length == 7
+            ? form.repeatWeekMask
+            : ''
+          : '',
+      repeatMonthDayMask:
+        form.repeatLabel != null && form.repeatLabel.indexOf('每月重复') == 0
+          ? form.repeatMonthDayMask != null && form.repeatMonthDayMask.length == 31
+            ? form.repeatMonthDayMask
+            : ''
+          : '',
+      repeatValidStartLabel:
+        noRep
+          ? ''
+          : form.repeatValidStartLabel != null
+            ? form.repeatValidStartLabel
+            : '',
+      repeatValidEndLabel:
+        noRep ? '' : form.repeatValidEndLabel != null ? form.repeatValidEndLabel : '',
+      repeatValidEndNever: noRep ? true : form.repeatValidEndNever != null ? form.repeatValidEndNever : true,
+      imagePaths: persistedPaths,
+    }
+    if (editingTaskId.value.length > 0) {
+      const ok = updateTask(editingTaskId.value, payload)
+      if (!ok) {
+        uni.showToast({ title: '保存失败', icon: 'none' })
+        isSubmitting.value = false
+        return
+      }
+    } else {
+      createTask(payload)
+    }
+    uni.showToast({ title: '已保存', icon: 'success' })
+    setTimeout(() => {
+      isSubmitting.value = false
+      uni.navigateBack({})
+    }, 600)
+  }
+
+  const onTapImageUpload = () => {
+    const remain = MAX_IMAGES - form.imagePaths.length
+    if (remain <= 0) {
+      uni.showToast({ title: '最多5张图片', icon: 'none' })
+      return
+    }
+    uni.chooseImage({
+      count: remain,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const tf = res.tempFilePaths
+        if (tf == null) {
+          return
+        }
+        for (let i = 0; i < tf.length; i++) {
+          if (form.imagePaths.length >= MAX_IMAGES) {
+            break
+          }
+          form.imagePaths.push(tf[i] as string)
+        }
+      },
+    })
+  }
+
+  const onTapRepeat = () => {
+    const rid = repeatIdFromLabel(form.repeatLabel)
+    let url = '/pages/add/repeat/index?repeatId=' + rid
+    if (rid == 'customWeek') {
+      const wm = form.repeatWeekMask != null ? form.repeatWeekMask : ''
+      if (wm.length == 7) {
+        url = url + '&weekMask=' + wm
+      }
+    }
+    if (rid == 'monthly') {
+      const mm = form.repeatMonthDayMask != null ? form.repeatMonthDayMask : ''
+      if (mm.length == 31) {
+        url = url + '&monthMask=' + mm
+      }
+    }
+    // 把已有的重复有效期一并传给重复规则页，编辑时才能回显
+    if (rid != 'none') {
+      const vs = form.repeatValidStartLabel != null ? form.repeatValidStartLabel : ''
+      if (vs.length > 0) {
+        url = url + '&validStart=' + encodeURIComponent(vs)
+      }
+      const endNeverFlag = form.repeatValidEndNever != null ? form.repeatValidEndNever : true
+      url = url + '&validEndNever=' + (endNeverFlag ? '1' : '0')
+      if (!endNeverFlag) {
+        const ve = form.repeatValidEndLabel != null ? form.repeatValidEndLabel : ''
+        if (ve.length > 0) {
+          url = url + '&validEnd=' + encodeURIComponent(ve)
+        }
+      }
+    }
+    uni.navigateTo({ url: url })
+  }
+
+  const applyRepeatResultFromStorage = () => {
+    const v = uni.getStorageSync(REPEAT_STORAGE_KEY)
+    if (v != null) {
+      const s = v as string
+      if (s.length > 0) {
+        form.repeatLabel = s
+        uni.removeStorageSync(REPEAT_STORAGE_KEY)
+      }
+    }
+    const metaRaw = uni.getStorageSync(REPEAT_META_STORAGE_KEY)
+    if (metaRaw != null) {
+      const ms = metaRaw as string
+      if (ms != null && ms.length > 10) {
+        try {
+          const obj = JSON.parse(ms) as UTSJSONObject
+          if (obj != null) {
+            if (isRepeatNoneForm()) {
+              form.repeatMonthDayMask = ''
+              form.repeatWeekMask = ''
+              form.repeatValidStartLabel = ''
+              form.repeatValidEndLabel = ''
+              form.repeatValidEndNever = true
+            } else {
+              if (form.repeatLabel != null && form.repeatLabel.indexOf('每月重复') == 0) {
+                const mm = obj['monthDayMask']
+                if (mm != null) {
+                  const mms = mm as string
+                  if (mms.length == 31) {
+                    form.repeatMonthDayMask = mms
+                  }
+                }
+              } else {
+                form.repeatMonthDayMask = ''
+              }
+              if (form.repeatLabel != null && form.repeatLabel.indexOf('自定义周重复') == 0) {
+                const wm = obj['weekMask']
+                if (wm != null) {
+                  const wms = wm as string
+                  if (wms.length == 7) {
+                    form.repeatWeekMask = wms
+                  }
+                }
+              } else {
+                form.repeatWeekMask = ''
+              }
+              const rs = obj['startDateLabel']
+              if (rs != null) {
+                form.repeatValidStartLabel = rs as string
+              }
+              const re = obj['endDateLabel']
+              if (re != null) {
+                form.repeatValidEndLabel = re as string
+              }
+              const en = obj['endNever']
+              if (en != null) {
+                form.repeatValidEndNever = en as boolean
+              } else {
+                form.repeatValidEndNever = true
+              }
+            }
+          }
+        } catch (_e) {
+          // ignore
+        }
+      }
+      uni.removeStorageSync(REPEAT_META_STORAGE_KEY)
+    } else {
+      if (form.repeatLabel == null || form.repeatLabel.indexOf('每月重复') != 0) {
+        form.repeatMonthDayMask = ''
+      }
+      if (form.repeatLabel == null || form.repeatLabel.indexOf('自定义周重复') != 0) {
+        form.repeatWeekMask = ''
+      }
+    }
+    if (isRepeatNoneForm()) {
+      form.repeatValidStartLabel = ''
+      form.repeatValidEndLabel = ''
+      form.repeatValidEndNever = true
+    }
+    snapWindowToAnchorWhenRepeat()
+  }
+
+  return {
+    statusBarHeight,
+    pageTitle,
+    form,
+    isSubmitting,
+    initAddPage,
+    cancel,
+    submit,
+    onTapImageUpload,
+    onTapRepeat,
+    applyRepeatResultFromStorage,
+    onUpdateSubject,
+    onUpdateStartDate,
+    onUpdateEndDate,
+    onUpdateCustomSubject,
+    onRemoveImage,
+  }
+}
