@@ -1,55 +1,14 @@
 <template>
   <view class="section">
     <view class="section__toolbar">
-      <!-- #ifdef MP-WEIXIN -->
-      <snapshot id="hw-section-snapshot" mode="view" class="section__snapshot">
-      <!-- #endif -->
-        <view id="hw-section-capture" class="section__capture">
-          <view class="section__head">
-            <text class="section__title">{{ sectionTitle }}</text>
-          </view>
-
-          <view v-for="task in tasks" :key="task.key" class="task-card">
-          <view
-            class="task-card__body"
-            :class="task.muted ? 'task-card__body--muted' : ''"
-            @click="emit('opentask', task.taskId, task.occurrenceDayKey)"
-          >
-            <view class="task-title-row">
-              <view class="tag" :class="tagClassForSubject(task.subjectKind)">
-                <text class="tag__text" :class="tagTextClassForSubject(task.subjectKind)">{{ task.subject }}</text>
-              </view>
-              <text class="task-title" :class="task.titleDone ? 'task-title--done' : ''">{{ task.title }}</text>
-            </view>
-            <view class="task-due-block">
-              <view class="due-block">
-                <view v-if="task.dueRangeMain != null && task.dueRangeMain.length > 0" class="due-row">
-                  <view class="due-row__icon-wrap">
-                    <uni-icons type="calendar" size="28rpx" color="#5a6157" />
-                  </view>
-                  <text class="due-row__text">{{ task.dueRangeMain }}</text>
-                </view>
-                <view
-                  v-if="task.dueRangeSub != null && task.dueRangeSub.length > 0"
-                  class="due-sub-row"
-                >
-                  <text class="due-row__text due-sub-row__text">{{ task.dueRangeSub }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-
-          <view v-if="task.trailing == 'complete'" class="btn-primary-sm" @click.stop="emit('complete', task.taskId, task.occurrenceDayKey)">
-            <text class="btn-primary-sm__text">完成</text>
-          </view>
-          <view v-else class="pill-done" @click.stop="emit('uncomplete', task.taskId, task.occurrenceDayKey)">
-            <text class="pill-done__text">已完成</text>
-          </view>
-          </view>
-        </view>
-      <!-- #ifdef MP-WEIXIN -->
-      </snapshot>
-      <!-- #endif -->
+      <home-section-capture-content
+        :section-title="sectionTitle"
+        :tasks="tasks"
+        :show-qr-footer="false"
+        @complete="onComplete"
+        @uncomplete="onUncomplete"
+        @opentask="onOpenTask"
+      ></home-section-capture-content>
 
       <view v-if="tasks.length > 0" class="section__menu-hit" @tap.stop="onMenuTap">
         <uni-icons type="more-filled" size="40rpx" color="#3e6942" />
@@ -59,7 +18,7 @@
 </template>
 
 <script setup>
-  import { getCurrentInstance } from 'vue'
+  import HomeSectionCaptureContent from './HomeSectionCaptureContent.uvue'
 
   defineProps({
     sectionTitle: { type: String, default: '' },
@@ -68,7 +27,17 @@
 
   const emit = defineEmits(['complete', 'uncomplete', 'opentask', 'save', 'share'])
 
-  const selfProxy = getCurrentInstance()?.proxy
+  const onComplete = (taskId : string, dayKey : number) => {
+    emit('complete', taskId, dayKey)
+  }
+
+  const onUncomplete = (taskId : string, dayKey : number) => {
+    emit('uncomplete', taskId, dayKey)
+  }
+
+  const onOpenTask = (taskId : string, dayKey : number) => {
+    emit('opentask', taskId, dayKey)
+  }
 
   const onMenuTap = () => {
     uni.showActionSheet({
@@ -84,134 +53,15 @@
       fail: () => {},
     })
   }
-
-  // #ifdef MP-WEIXIN
-  /**
-   * 在组件自身作用域内执行 SelectorQuery，可找到本组件 shadow DOM 内的 snapshot 节点。
-   * 由页面通过 ref 调用，避免页面级 query 跨 shadow DOM 找不到节点的问题。
-   */
-  const takeSkylineCapture = (onFinish : (ok : boolean, filePath : string) => void) => {
-    console.log('[snapshot] takeSkylineCapture called, selfProxy:', selfProxy != null)
-    const query = uni.createSelectorQuery()
-    const scoped = selfProxy != null ? query.in(selfProxy) : query
-    scoped.select('#hw-section-snapshot').node().exec((res : any) => {
-      console.log('[snapshot] exec res:', JSON.stringify(res))
-      if (res == null) {
-        console.warn('[snapshot] exec res null')
-        onFinish(false, '')
-        return
-      }
-      const arr = res as any[]
-      if (arr.length == 0) {
-        console.warn('[snapshot] exec arr empty')
-        onFinish(false, '')
-        return
-      }
-      const item = arr[0] as UTSJSONObject
-      if (item == null) {
-        console.warn('[snapshot] arr[0] null')
-        onFinish(false, '')
-        return
-      }
-      const nodeVal = item['node']
-      if (nodeVal == null) {
-        console.warn('[snapshot] node null — snapshot 节点未找到')
-        onFinish(false, '')
-        return
-      }
-      const snapNode = nodeVal as UTSJSONObject
-      const takeFn = snapNode['takeSnapshot']
-      if (takeFn == null || typeof takeFn != 'function') {
-        console.warn('[snapshot] takeSnapshot not a function')
-        onFinish(false, '')
-        return
-      }
-      const invoke = takeFn as (options : UTSJSONObject) => void
-      invoke({
-        type: 'file',
-        format: 'png',
-        success: (snapRes : UTSJSONObject) => {
-          const pathVal = snapRes['tempFilePath']
-          const path = pathVal != null ? (pathVal as string) : ''
-          console.log('[snapshot] takeSnapshot ok:', path)
-          onFinish(path.length > 0, path)
-        },
-        fail: (err : any) => {
-          console.warn('[snapshot] takeSnapshot fail', err)
-          onFinish(false, '')
-        },
-      })
-    })
-  }
-
-  defineExpose({ takeSkylineCapture })
-  // #endif
-
-  const tagClassForSubject = (kind : string) => {
-    if (kind == 'math') {
-      return 'tag--math'
-    }
-    if (kind == 'en') {
-      return 'tag--en'
-    }
-    if (kind == 'zh') {
-      return 'tag--zh'
-    }
-    return 'tag--custom'
-  }
-
-  const tagTextClassForSubject = (kind : string) => {
-    if (kind == 'en') {
-      return 'tag__text--en'
-    }
-    if (kind == 'zh') {
-      return 'tag__text--zh'
-    }
-    if (kind == 'custom') {
-      return 'tag__text--custom'
-    }
-    return ''
-  }
 </script>
 
 <style scoped>
   .section {
-    /* 水平 padding 移入 .section__capture，让 snapshot 截图包含左右边距 */
     padding-top: 8rpx;
   }
 
   .section__toolbar {
     position: relative;
-  }
-
-  .section__snapshot {
-    width: 100%;
-    background-color: #f8faf3;
-  }
-
-  .section__capture {
-    width: 100%;
-    padding-left: 40rpx;
-    padding-right: 40rpx;
-    padding-top: 16rpx;
-    padding-bottom: 40rpx;
-    box-sizing: border-box;
-    background-color: #f8faf3;
-  }
-
-  .section__head {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding-left: 4rpx;
-    padding-right: 80rpx;
-    margin-bottom: 32rpx;
-  }
-
-  .section__title {
-    font-size: 40rpx;
-    font-weight: 600;
-    color: #2d342c;
   }
 
   .section__menu-hit {
@@ -230,200 +80,5 @@
     padding-top: 8rpx;
     padding-bottom: 8rpx;
     border-radius: 9999rpx;
-  }
-
-  .task-card {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 48rpx;
-    padding: 32rpx;
-    border-radius: 24rpx;
-    border-width: 1px;
-    border-style: solid;
-    border-color: #adb4a8;
-    background-color: #ffffff;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  }
-
-  .task-card__body {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    margin-right: 24rpx;
-    min-width: 0;
-  }
-
-  .task-card__body--muted {
-    opacity: 0.6;
-  }
-
-  .task-title-row {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    column-gap: 16rpx;
-    width: 100%;
-  }
-
-  .task-title {
-    flex: 1;
-    min-width: 0;
-    font-size: 34rpx;
-    line-height: 48rpx;
-    font-weight: 500;
-    color: #2d342c;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-
-  .task-title--done {
-    text-decoration: line-through;
-  }
-
-  .task-due-block {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    margin-top: 8rpx;
-    min-width: 0;
-  }
-
-  .tag {
-    flex-shrink: 0;
-    align-self: flex-start;
-    padding-left: 16rpx;
-    padding-right: 16rpx;
-    padding-top: 4rpx;
-    padding-bottom: 4rpx;
-    border-radius: 8rpx;
-    margin-top: 4rpx;
-    border-width: 0;
-  }
-
-  .tag--math {
-    background-color: #e3f2e4;
-  }
-
-  .tag--en {
-    background-color: #f4f7d0;
-  }
-
-  .tag--zh {
-    background-color: #e8eef8;
-  }
-
-  .tag--custom {
-    background-color: #ede4f7;
-  }
-
-  .tag__text {
-    font-size: 22rpx;
-    font-weight: 700;
-    color: #3e6942;
-  }
-
-  .tag__text--en {
-    color: #5d6330;
-  }
-
-  .tag__text--zh {
-    color: #3d4f6b;
-  }
-
-  .tag__text--custom {
-    color: #5a3d6b;
-  }
-
-  .due-block {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    flex: 1;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .due-row {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    width: 100%;
-    min-width: 0;
-  }
-
-  /* 设计稿：material-symbols-outlined text-[14px]；与文案 gap-1（4px） */
-  .due-row__icon-wrap {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    margin-right: 8rpx;
-    margin-top: 4rpx;
-    flex-shrink: 0;
-  }
-
-  .due-sub-row {
-    display: flex;
-    flex-direction: row;
-    margin-top: 0;
-  }
-
-  .due-row + .due-sub-row {
-    margin-top: 4rpx;
-  }
-
-  /* 设计稿：text-caption text-on-surface-variant — 13px / 18px 行高 */
-  .due-row__text {
-    font-size: 26rpx;
-    line-height: 36rpx;
-    color: #5a6157;
-    flex: 1;
-    min-width: 0;
-    /* 微信小程序 <text> 不会自动继承 flex 收缩换行，需显式声明 */
-    word-break: break-word;
-    overflow-wrap: break-word;
-  }
-
-  .due-sub-row__text {
-    flex: none;
-  }
-
-  .btn-primary-sm {
-    padding-left: 32rpx;
-    padding-right: 32rpx;
-    padding-top: 12rpx;
-    padding-bottom: 12rpx;
-    border-radius: 9999px;
-    background-color: #3e6942;
-    border-width: 0;
-    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
-    box-sizing: border-box;
-  }
-
-  .btn-primary-sm__text {
-    font-size: 28rpx;
-    line-height: 40rpx;
-    font-weight: 600;
-    color: #e9ffe5;
-  }
-
-  .pill-done {
-    padding-left: 24rpx;
-    padding-right: 24rpx;
-    padding-top: 12rpx;
-    padding-bottom: 12rpx;
-    border-radius: 9999px;
-    background-color: #d4e8d0;
-    border-width: 0;
-    box-sizing: border-box;
-  }
-
-  .pill-done__text {
-    font-size: 28rpx;
-    line-height: 40rpx;
-    font-weight: 500;
-    color: #455644;
   }
 </style>

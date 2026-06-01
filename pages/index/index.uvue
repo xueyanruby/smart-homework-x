@@ -31,7 +31,6 @@
         <home-empty-state v-if="tasks.length == 0"></home-empty-state>
         <home-task-section
           v-else
-          ref="taskSectionRef"
           :section-title="sectionTitle"
           :tasks="tasks"
           @save="onSaveListImage"
@@ -45,6 +44,15 @@
     </scroll-view>
 
     <home-fab @click="onAddTask"></home-fab>
+
+    <!-- #ifdef MP-WEIXIN -->
+    <home-section-export-layer
+      v-if="exportCaptureVisible"
+      ref="exportLayerRef"
+      :section-title="sectionTitle"
+      :tasks="tasks"
+    ></home-section-export-layer>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -65,6 +73,7 @@
   import HomeFilterTabs from './modules/HomeFilterTabs.uvue'
   import HomeDateStrip from './modules/HomeDateStrip.uvue'
   import HomeTaskSection from './modules/HomeTaskSection.uvue'
+  import HomeSectionExportLayer from './modules/HomeSectionExportLayer.uvue'
   import HomeFab from './modules/HomeFab.uvue'
   import HomeEmptyState from './modules/HomeEmptyState.uvue'
 
@@ -90,9 +99,9 @@
   const snapCanvasW = ref(300)
   const snapCanvasH = ref(400)
   const savingSnapshot = ref(false)
+  const exportCaptureVisible = ref(false)
   const pageInstance = getCurrentInstance()
-  // 用于 MP-WEIXIN 路径调用组件内部 Skyline SelectorQuery
-  const taskSectionRef = ref<InstanceType<typeof HomeTaskSection> | null>(null)
+  const exportLayerRef = ref<InstanceType<typeof HomeSectionExportLayer> | null>(null)
 
   const runListSnapshotAction = (action : string) => {
     if (savingSnapshot.value) {
@@ -111,10 +120,46 @@
       if (!done) {
         done = true
         savingSnapshot.value = false
+        exportCaptureVisible.value = false
         uni.hideLoading()
         uni.showToast({ title: '操作超时，请稍后重试', icon: 'none' })
       }
     }, 6000)
+
+    const finishExportCapture = () => {
+      exportCaptureVisible.value = false
+    }
+
+    const runOffscreenSkylineCapture = () => {
+      exportCaptureVisible.value = true
+      nextTick(() => {
+        nextTick(() => {
+          setTimeout(() => {
+            const layerComp = exportLayerRef.value as any
+            if (layerComp == null || typeof layerComp['takeExportSnapshot'] != 'function') {
+              console.warn('[snapshot] export layer not ready, fallback to canvas')
+              finishExportCapture()
+              canvasFallback()
+              return
+            }
+            const captureFn = layerComp['takeExportSnapshot'] as (cb : (ok : boolean, filePath : string) => void) => void
+            captureFn((ok : boolean, filePath : string) => {
+              finishExportCapture()
+              if (ok && filePath.length > 0) {
+                if (action == 'share') {
+                  shareImageFile(filePath, onDone)
+                } else {
+                  saveTempFileToAlbum(filePath, onDone)
+                }
+                return
+              }
+              console.warn('[snapshot] offscreen Skyline capture failed, fallback to canvas')
+              canvasFallback()
+            })
+          }, 360)
+        })
+      })
+    }
 
     const onDone = (ok : boolean, msg : string) => {
       if (done) return
@@ -139,34 +184,11 @@
     }
 
     nextTick(() => {
-      // Skyline snapshot 需等待节点完成布局
-      const delayMs = 280
-      setTimeout(() => {
-        // #ifdef MP-WEIXIN
-        // 优先通过组件内部 SelectorQuery 获取 Skyline snapshot 节点，
-        // 组件自身作用域能找到自己的 shadow DOM 节点，页面级 query 无法跨 shadow DOM
-        const sectionComp = taskSectionRef.value as any
-        if (sectionComp != null && typeof sectionComp['takeSkylineCapture'] == 'function') {
-          const captureFn = sectionComp['takeSkylineCapture'] as (cb : (ok : boolean, filePath : string) => void) => void
-          captureFn((ok : boolean, filePath : string) => {
-            if (ok && filePath.length > 0) {
-              if (action == 'share') {
-                shareImageFile(filePath, onDone)
-              } else {
-                saveTempFileToAlbum(filePath, onDone)
-              }
-              return
-            }
-            // Skyline 截图失败，回退 canvas 绘制
-            console.warn('[snapshot] Skyline capture failed, fallback to canvas')
-            canvasFallback()
-          })
-          return
-        }
-        console.warn('[snapshot] taskSectionRef or takeSkylineCapture not available, fallback to canvas')
-        // #endif
-        canvasFallback()
-      }, delayMs)
+      // #ifdef MP-WEIXIN
+      runOffscreenSkylineCapture()
+      return
+      // #endif
+      canvasFallback()
     })
   }
 

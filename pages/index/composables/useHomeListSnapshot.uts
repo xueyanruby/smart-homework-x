@@ -2,6 +2,13 @@
 
 export const SECTION_SNAPSHOT_ID = 'hw-section-snapshot'
 
+/** 保存/分享图片底部小程序码 */
+const SNAPSHOT_QR_SRC = '/static/icons/qr-code.png'
+
+function getSnapshotQrFooterHeightPx() : number {
+  return uni.upx2px(240)
+}
+
 export type SnapshotTaskRow = {
   title : string
   subject : string
@@ -38,7 +45,7 @@ function estimateSectionHeight(payload : SnapshotPayload, canvasW : number) : nu
   const titleMaxChars = contentW > 300 ? 22 : 16
   let y = pad + 48
   if (payload.rows.length == 0) {
-    y = y + 40 + pad
+    y = y + 40 + pad + getSnapshotQrFooterHeightPx()
     return y
   }
   for (let i = 0; i < payload.rows.length; i++) {
@@ -54,7 +61,7 @@ function estimateSectionHeight(payload : SnapshotPayload, canvasW : number) : nu
     }
     y = y + 22 + 14 + 48
   }
-  y = y + pad
+  y = y + pad + getSnapshotQrFooterHeightPx()
   return y
 }
 
@@ -300,6 +307,86 @@ function drawSectionSnapshotBody(
   }
 }
 
+function drawSectionQrFooterLegacy(
+  ctx : any,
+  w : number,
+  hCap : number,
+  pad : number,
+  strokeLine : (y : number, color : string) => void,
+  setFillStyle : (color : string) => void,
+  setFontSize : (size : number) => void,
+  fillText : (text : string, x : number, y : number) => void,
+  onDone : () => void,
+) {
+  const footerH = getSnapshotQrFooterHeightPx()
+  const footerTop = hCap - footerH
+  const qrSize = uni.upx2px(120)
+  const qrX = (w - qrSize) / 2
+  const qrY = footerTop + uni.upx2px(40)
+
+  strokeLine(footerTop + uni.upx2px(16), '#e0e6da')
+
+  uni.getImageInfo({
+    src: SNAPSHOT_QR_SRC,
+    success: (res) => {
+      const pathVal = res.path
+      const path = pathVal != null ? pathVal : ''
+      if (path.length > 0) {
+        ctx.drawImage(path, qrX, qrY, qrSize, qrSize)
+      }
+      setFillStyle('#8a9285')
+      setFontSize(12)
+      fillText('长按识别小程序码', pad, qrY + qrSize + uni.upx2px(24))
+      onDone()
+    },
+    fail: () => {
+      onDone()
+    },
+  })
+}
+
+function drawSectionQrFooterCanvas2d(
+  canvasCtx : any,
+  ctx : any,
+  w : number,
+  hCap : number,
+  pad : number,
+  strokeLine : (y : number, color : string) => void,
+  setFillStyle : (color : string) => void,
+  setFontSize : (size : number) => void,
+  fillText : (text : string, x : number, y : number) => void,
+  onDone : () => void,
+) {
+  const footerH = getSnapshotQrFooterHeightPx()
+  const footerTop = hCap - footerH
+  const qrSize = uni.upx2px(120)
+  const qrX = (w - qrSize) / 2
+  const qrY = footerTop + uni.upx2px(40)
+
+  strokeLine(footerTop + uni.upx2px(16), '#e0e6da')
+
+  const canvasObj = canvasCtx as UTSJSONObject
+  const createImageFn = canvasObj['createImage']
+  if (createImageFn == null || typeof createImageFn != 'function') {
+    onDone()
+    return
+  }
+  const invokeCreate = createImageFn as () => any
+  const img = invokeCreate()
+  const imgObj = img as UTSJSONObject
+  imgObj['onload'] = () => {
+    ctx.drawImage(img, qrX, qrY, qrSize, qrSize)
+    setFillStyle('#8a9285')
+    setFontSize(12)
+    fillText('长按识别小程序码', pad, qrY + qrSize + uni.upx2px(24))
+    onDone()
+  }
+  imgObj['onerror'] = () => {
+    onDone()
+  }
+  imgObj['src'] = SNAPSHOT_QR_SRC
+}
+
 // #ifdef MP-WEIXIN
 function dataUrlToTempFile(dataUrl : string, onFinish : (ok : boolean, msg : string, filePath : string) => void) {
   const comma = dataUrl.indexOf(',')
@@ -382,43 +469,62 @@ function generateSectionSnapshotImageOnMpWeixin(
         return
       }
 
+      const strokeLine = (y : number, color : string) => {
+        ctx.strokeStyle = color
+        ctx.beginPath()
+        ctx.moveTo(pad, y)
+        ctx.lineTo(w - pad, y)
+        ctx.stroke()
+      }
+      const setFillStyle = (color : string) => {
+        ctx.fillStyle = color
+      }
+      const setFontSize = (size : number) => {
+        ctx.font = size.toString() + 'px sans-serif'
+      }
+      const fillText = (text : string, x : number, y : number) => {
+        ctx.fillText(text, x, y)
+      }
+      const fillRect = (x : number, y : number, width : number, height : number) => {
+        ctx.fillRect(x, y, width, height)
+      }
+
       drawSectionSnapshotBody(
         payload,
         w,
         pad,
         titleMaxChars,
         hCap,
-        (color : string) => {
-          ctx.fillStyle = color
-        },
-        (size : number) => {
-          ctx.font = size.toString() + 'px sans-serif'
-        },
-        (text : string, x : number, y : number) => {
-          ctx.fillText(text, x, y)
-        },
-        (x : number, y : number, width : number, height : number) => {
-          ctx.fillRect(x, y, width, height)
-        },
-        (y : number, color : string) => {
-          ctx.strokeStyle = color
-          ctx.beginPath()
-          ctx.moveTo(pad, y)
-          ctx.lineTo(w - pad, y)
-          ctx.stroke()
-        },
+        setFillStyle,
+        setFontSize,
+        fillText,
+        fillRect,
+        strokeLine,
       )
 
-      // Skyline + Canvas 2D 模式下，uni.canvasToTempFilePath(canvasId) 是 Legacy API，
-      // 在 Skyline 中静默挂起（不触发 success/fail），直接用 toDataURL 导出更可靠。
-      setTimeout(() => {
-        const dataUrl = canvasCtx.toDataURL('image/png', 1)
-        if (dataUrl == null || dataUrl.length == 0) {
-          onFinish(false, '生成图片失败', '')
-          return
-        }
-        dataUrlToTempFile(dataUrl, onFinish)
-      }, 200)
+      drawSectionQrFooterCanvas2d(
+        canvasCtx,
+        ctx,
+        w,
+        hCap,
+        pad,
+        strokeLine,
+        setFillStyle,
+        setFontSize,
+        fillText,
+        () => {
+          // Skyline + Canvas 2D 模式下，uni.canvasToTempFilePath(canvasId) 是 Legacy API，
+          // 在 Skyline 中静默挂起（不触发 success/fail），直接用 toDataURL 导出更可靠。
+          setTimeout(() => {
+            const dataUrl = canvasCtx.toDataURL('image/png', 1)
+            if (dataUrl == null || dataUrl.length == 0) {
+              onFinish(false, '生成图片失败', '')
+              return
+            }
+            dataUrlToTempFile(dataUrl, onFinish)
+          }, 200)
+        },
+      )
     },
     fail: () => {
       onFinish(false, '画布初始化失败', '')
@@ -511,36 +617,54 @@ function generateSectionSnapshotImageLegacy(
 
   const ctx = uni.createCanvasContext(canvasId, component)
 
+  const strokeLine = (y : number, color : string) => {
+    ctx.setStrokeStyle(color)
+    ctx.beginPath()
+    ctx.moveTo(pad, y)
+    ctx.lineTo(w - pad, y)
+    ctx.stroke()
+  }
+  const setFillStyle = (color : string) => {
+    ctx.setFillStyle(color)
+  }
+  const setFontSize = (size : number) => {
+    ctx.setFontSize(size)
+  }
+  const fillText = (text : string, x : number, y : number) => {
+    ctx.fillText(text, x, y)
+  }
+  const fillRect = (x : number, y : number, width : number, height : number) => {
+    ctx.fillRect(x, y, width, height)
+  }
+
   drawSectionSnapshotBody(
     payload,
     w,
     pad,
     titleMaxChars,
     hCap,
-    (color : string) => {
-      ctx.setFillStyle(color)
-    },
-    (size : number) => {
-      ctx.setFontSize(size)
-    },
-    (text : string, x : number, y : number) => {
-      ctx.fillText(text, x, y)
-    },
-    (x : number, y : number, width : number, height : number) => {
-      ctx.fillRect(x, y, width, height)
-    },
-    (y : number, color : string) => {
-      ctx.setStrokeStyle(color)
-      ctx.beginPath()
-      ctx.moveTo(pad, y)
-      ctx.lineTo(w - pad, y)
-      ctx.stroke()
-    },
+    setFillStyle,
+    setFontSize,
+    fillText,
+    fillRect,
+    strokeLine,
   )
 
-  ctx.draw(false, () => {
-    exportCanvasToTempFile(canvasId, component, w, hCap, onFinish)
-  })
+  drawSectionQrFooterLegacy(
+    ctx,
+    w,
+    hCap,
+    pad,
+    strokeLine,
+    setFillStyle,
+    setFontSize,
+    fillText,
+    () => {
+      ctx.draw(false, () => {
+        exportCanvasToTempFile(canvasId, component, w, hCap, onFinish)
+      })
+    },
+  )
 }
 
 function generateListSnapshotImageLegacy(

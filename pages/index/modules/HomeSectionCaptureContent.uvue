@@ -1,0 +1,329 @@
+<template>
+  <view class="capture">
+    <view class="capture__head">
+      <text class="capture__title">{{ sectionTitle }}</text>
+    </view>
+
+    <view v-for="task in tasks" :key="task.key" class="task-card">
+      <view
+        class="task-card__body"
+        :class="task.muted ? 'task-card__body--muted' : ''"
+        @click="emit('opentask', task.taskId, task.occurrenceDayKey)"
+      >
+        <view class="task-title-row">
+          <view class="tag" :class="tagClassForSubject(task.subjectKind)">
+            <text class="tag__text" :class="tagTextClassForSubject(task.subjectKind)">{{ task.subject }}</text>
+          </view>
+          <text class="task-title" :class="task.titleDone ? 'task-title--done' : ''">{{ task.title }}</text>
+        </view>
+        <view class="task-due-block">
+          <view class="due-block">
+            <view v-if="task.dueRangeMain != null && task.dueRangeMain.length > 0" class="due-row">
+              <view class="due-row__icon-wrap">
+                <uni-icons type="calendar" size="28rpx" color="#5a6157" />
+              </view>
+              <text class="due-row__text">{{ task.dueRangeMain }}</text>
+            </view>
+            <view v-if="task.dueRangeSub != null && task.dueRangeSub.length > 0" class="due-sub-row">
+              <text class="due-row__text due-sub-row__text">{{ task.dueRangeSub }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view
+        v-if="task.trailing == 'complete'"
+        class="btn-primary-sm"
+        @click.stop="emit('complete', task.taskId, task.occurrenceDayKey)"
+      >
+        <text class="btn-primary-sm__text">完成</text>
+      </view>
+      <view v-else class="pill-done" @click.stop="emit('uncomplete', task.taskId, task.occurrenceDayKey)">
+        <text class="pill-done__text">已完成</text>
+      </view>
+    </view>
+
+    <view v-if="showQrFooter" class="capture__qr-footer">
+      <image class="capture__qr-img" src="/static/icons/qr-code.png" mode="aspectFit"></image>
+      <text class="capture__qr-text">长按识别小程序码</text>
+    </view>
+  </view>
+</template>
+
+<script setup>
+  defineProps({
+    sectionTitle: { type: String, default: '' },
+    tasks: { type: Array, default: () => [] },
+    showQrFooter: { type: Boolean, default: false },
+  })
+
+  const emit = defineEmits(['complete', 'uncomplete', 'opentask'])
+
+  const tagClassForSubject = (kind : string) => {
+    if (kind == 'math') {
+      return 'tag--math'
+    }
+    if (kind == 'en') {
+      return 'tag--en'
+    }
+    if (kind == 'zh') {
+      return 'tag--zh'
+    }
+    return 'tag--custom'
+  }
+
+  const tagTextClassForSubject = (kind : string) => {
+    if (kind == 'en') {
+      return 'tag__text--en'
+    }
+    if (kind == 'zh') {
+      return 'tag__text--zh'
+    }
+    if (kind == 'custom') {
+      return 'tag__text--custom'
+    }
+    return ''
+  }
+</script>
+
+<style scoped>
+  .capture {
+    width: 750rpx;
+    padding-left: 40rpx;
+    padding-right: 40rpx;
+    padding-top: 16rpx;
+    padding-bottom: 40rpx;
+    box-sizing: border-box;
+    background-color: #f8faf3;
+  }
+
+  .capture__head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 4rpx;
+    padding-right: 80rpx;
+    margin-bottom: 32rpx;
+  }
+
+  .capture__title {
+    font-size: 40rpx;
+    font-weight: 600;
+    color: #2d342c;
+  }
+
+  .task-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 48rpx;
+    padding: 32rpx;
+    border-radius: 24rpx;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #adb4a8;
+    background-color: #ffffff;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  }
+
+  .task-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin-right: 24rpx;
+    min-width: 0;
+  }
+
+  .task-card__body--muted {
+    opacity: 0.6;
+  }
+
+  .task-title-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    column-gap: 16rpx;
+    width: 100%;
+  }
+
+  .task-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 34rpx;
+    line-height: 48rpx;
+    font-weight: 500;
+    color: #2d342c;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .task-title--done {
+    text-decoration: line-through;
+  }
+
+  .task-due-block {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    margin-top: 8rpx;
+    min-width: 0;
+  }
+
+  .tag {
+    flex-shrink: 0;
+    align-self: flex-start;
+    padding-left: 16rpx;
+    padding-right: 16rpx;
+    padding-top: 4rpx;
+    padding-bottom: 4rpx;
+    border-radius: 8rpx;
+    margin-top: 4rpx;
+    border-width: 0;
+  }
+
+  .tag--math {
+    background-color: #e3f2e4;
+  }
+
+  .tag--en {
+    background-color: #f4f7d0;
+  }
+
+  .tag--zh {
+    background-color: #e8eef8;
+  }
+
+  .tag--custom {
+    background-color: #ede4f7;
+  }
+
+  .tag__text {
+    font-size: 22rpx;
+    font-weight: 700;
+    color: #3e6942;
+  }
+
+  .tag__text--en {
+    color: #5d6330;
+  }
+
+  .tag__text--zh {
+    color: #3d4f6b;
+  }
+
+  .tag__text--custom {
+    color: #5a3d6b;
+  }
+
+  .due-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .due-row {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .due-row__icon-wrap {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8rpx;
+    margin-top: 4rpx;
+    flex-shrink: 0;
+  }
+
+  .due-sub-row {
+    display: flex;
+    flex-direction: row;
+    margin-top: 0;
+  }
+
+  .due-row + .due-sub-row {
+    margin-top: 4rpx;
+  }
+
+  .due-row__text {
+    font-size: 26rpx;
+    line-height: 36rpx;
+    color: #5a6157;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .due-sub-row__text {
+    flex: none;
+  }
+
+  .btn-primary-sm {
+    padding-left: 32rpx;
+    padding-right: 32rpx;
+    padding-top: 12rpx;
+    padding-bottom: 12rpx;
+    border-radius: 9999px;
+    background-color: #3e6942;
+    border-width: 0;
+    box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+  }
+
+  .btn-primary-sm__text {
+    font-size: 28rpx;
+    line-height: 40rpx;
+    font-weight: 600;
+    color: #e9ffe5;
+  }
+
+  .pill-done {
+    padding-left: 24rpx;
+    padding-right: 24rpx;
+    padding-top: 12rpx;
+    padding-bottom: 12rpx;
+    border-radius: 9999px;
+    background-color: #d4e8d0;
+    border-width: 0;
+    box-sizing: border-box;
+  }
+
+  .pill-done__text {
+    font-size: 28rpx;
+    line-height: 40rpx;
+    font-weight: 500;
+    color: #455644;
+  }
+
+  .capture__qr-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 16rpx;
+    padding-top: 32rpx;
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-color: #e0e6da;
+  }
+
+  .capture__qr-img {
+    width: 160rpx;
+    height: 160rpx;
+  }
+
+  .capture__qr-text {
+    margin-top: 16rpx;
+    font-size: 24rpx;
+    line-height: 34rpx;
+    color: #8a9285;
+  }
+</style>

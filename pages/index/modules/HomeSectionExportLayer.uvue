@@ -1,0 +1,94 @@
+<template>
+  <!-- #ifdef MP-WEIXIN -->
+  <view class="export-layer">
+    <snapshot id="hw-export-snapshot" mode="view" class="export-layer__snapshot">
+      <home-section-capture-content
+        :section-title="sectionTitle"
+        :tasks="tasks"
+        :show-qr-footer="true"
+      ></home-section-capture-content>
+    </snapshot>
+  </view>
+  <!-- #endif -->
+</template>
+
+<script setup>
+  import { getCurrentInstance } from 'vue'
+  import HomeSectionCaptureContent from './HomeSectionCaptureContent.uvue'
+
+  defineProps({
+    sectionTitle: { type: String, default: '' },
+    tasks: { type: Array, default: () => [] },
+  })
+
+  const selfProxy = getCurrentInstance()?.proxy
+
+  // #ifdef MP-WEIXIN
+  onMounted(() => {
+    uni.getImageInfo({ src: '/static/icons/qr-code.png', success: () => {}, fail: () => {} })
+  })
+
+  const takeExportSnapshot = (onFinish : (ok : boolean, filePath : string) => void) => {
+    const query = uni.createSelectorQuery()
+    const scoped = selfProxy != null ? query.in(selfProxy) : query
+    scoped.select('#hw-export-snapshot').node().exec((res : any) => {
+      if (res == null) {
+        onFinish(false, '')
+        return
+      }
+      const arr = res as any[]
+      if (arr.length == 0) {
+        onFinish(false, '')
+        return
+      }
+      const item = arr[0] as UTSJSONObject
+      if (item == null) {
+        onFinish(false, '')
+        return
+      }
+      const nodeVal = item['node']
+      if (nodeVal == null) {
+        onFinish(false, '')
+        return
+      }
+      const snapNode = nodeVal as UTSJSONObject
+      const takeFn = snapNode['takeSnapshot']
+      if (takeFn == null || typeof takeFn != 'function') {
+        onFinish(false, '')
+        return
+      }
+      const invoke = takeFn as (options : UTSJSONObject) => void
+      invoke({
+        type: 'file',
+        format: 'png',
+        success: (snapRes : UTSJSONObject) => {
+          const pathVal = snapRes['tempFilePath']
+          const path = pathVal != null ? (pathVal as string) : ''
+          onFinish(path.length > 0, path)
+        },
+        fail: () => {
+          onFinish(false, '')
+        },
+      })
+    })
+  }
+
+  defineExpose({ takeExportSnapshot })
+  // #endif
+</script>
+
+<style scoped>
+  .export-layer {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 750rpx;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .export-layer__snapshot {
+    width: 750rpx;
+    background-color: #f8faf3;
+  }
+</style>
